@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+}
+
+.calendar .day {
+    padding: 10px;
+    text-align: center;
+    background-color: #f9fafb;
+}
+
+.calendar .header {
+    background-color: #f3f4f6;
+    font-weight: bold;
+}
