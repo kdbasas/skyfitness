@@ -1,4 +1,5 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,9 +18,12 @@ class CreateMembersTable extends Migration
             $table->string('contact_number');
             $table->unsignedBigInteger('subscription_id');
             $table->foreign('subscription_id')->references('subscription_id')->on('subscriptions')->onDelete('cascade');
-            $table->decimal('price', 8, 2);
+            $table->decimal('amount', 8, 2);
             $table->date('date_joined');
+            $table->date('date_expired')->nullable();
             $table->timestamps();
+
+            $table->index('subscription_id');
         });
     }
 

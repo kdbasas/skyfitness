@@ -21,7 +21,7 @@ class AdminSeeder extends Seeder
                 'name' => 'Karl Dave Basas',
                 'email' => 'admin@gmail.com',
                 'password' => Hash::make('123'), // Replace with your desired password
-                'profile_image' => 'dave.jpg',
+                'profile_image' => 'dave2.jpg',
                 'role' => 'admin',
                 'email_verified_at' => now(),
                 'created_at' => now(),

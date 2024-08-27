@@ -25,11 +25,19 @@ Route::group(['middleware' => ['auth', 'admin']], function () {
     Route::put('/admin/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::put('/admin/profile/picture', [AdminController::class, 'updatePicture'])->name('admin.profile.update_picture');
     Route::get('/admin/subscriptions', [AdminController::class, 'showSubscriptions'])->name('admin.subscription');
+    Route::get('/admin/subscriptions/{id}', [AdminController::class, 'getSubscriptionDetails']);
     Route::post('/admin/subscription/add', [AdminController::class, 'addSubscription'])->name('admin.subscription.add');
-
-
-
+    Route::put('/admin/subscription/update', [AdminController::class, 'updateSubscription'])->name('admin.subscription.update');
+    Route::delete('/admin/subscription/delete', [AdminController::class, 'deleteSubscription'])->name('admin.subscription.delete');
+    Route::get('/admin/inventory', [AdminController::class, 'showInventory'])->name('admin.inventory');
+    Route::post('/admin/inventory/add', [AdminController::class, 'addEquipment'])->name('admin.inventory.add');
+    Route::get('/admin/members', [AdminController::class, 'showMembers'])->name('admin.member_management');
+    Route::post('/admin/member_management/add', [AdminController::class, 'addMember'])->name('admin.member.add');
+    Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('admin.member_management.update');
+    Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('admin.reports');
+    Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
 });
+
 Route::group(['middleware' => ['auth', 'staff']], function () {
     Route::get('/staff/dashboard', [GymStaffController::class, 'dashboard'])->name('staff.dashboard');
     Route::get('/staff/profile', [GymStaffController::class, 'showProfile'])->name('staff.profile');

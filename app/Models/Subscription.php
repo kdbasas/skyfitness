@@ -17,6 +17,12 @@ class Subscription extends Model
         'validity',
         'amount',
     ];
-
-    public $timestamps = true;
+    protected $dates = [
+        'created_at',
+        'updated_at',
+    ];
+    public function members()
+    {
+        return $this->hasMany(Member::class, 'subscription_id', 'subscription_id');
+    }
 }
