@@ -91,9 +91,9 @@ class AdminController extends Controller
     public function showSubscriptions()
 {
     $subscriptions = Subscription::all();
-    return view('admin.subscription', compact('subscriptions')); // Ensure this matches the file path
-}
-
+        return view('admin.subscription', compact('subscriptions'));
+    }
+    
 
     // Add New Subscription
     public function addSubscription(Request $request)
