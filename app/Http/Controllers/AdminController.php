@@ -152,27 +152,73 @@ class AdminController extends Controller
         return redirect()->route('admin.subscription')->with('error', 'Subscription not found.');
     }
 
-    // Show Payments
-    public function showPayments()
-    {
-        $payments = Payment::all();
-        return view('admin.payments', compact('payments'));
+    public function showPaymentForm()
+{
+    $members = Member::all(); // Fetch all members
+    $subscriptions = Subscription::all(); // Fetch all subscriptions
+    $payments = Payment::with('member', 'subscription')->get(); // Fetch all payments with their associated members and subscriptions
+
+    return view('admin.payment', compact('members', 'subscriptions', 'payments'));
+}
+
+public function addPayment(Request $request)
+{
+    \Log::info('Payment Data:', $request->all()); // For debugging
+
+    $request->validate([
+        'member_id' => 'required|exists:members,member_id',
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',  // Ensure this points to the correct column
+        'amount' => 'required|numeric',
+        'date_paid' => 'required|date',
+    ]);
+
+    Payment::create([
+        'member_id' => $request->member_id,
+        'subscription_id' => $request->subscription_id,
+        'amount' => $request->amount,
+        'date_paid' => $request->date_paid,
+    ]);
+
+    return redirect()->route('admin.payment.form')->with('success', 'Payment recorded successfully!');
+}
+
+
+public function updatePayment(Request $request)
+{
+    $request->validate([
+        'payment_id' => 'required|exists:payments,payment_id',
+        'member_id' => 'required|exists:members,member_id',
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        'amount' => 'required|numeric|min:0',
+        'date_paid' => 'required|date',
+    ]);
+
+    $payment = Payment::find($request->payment_id);
+    $payment->update([
+        'member_id' => $request->member_id,
+        'subscription_id' => $request->subscription_id,
+        'amount' => $request->amount,
+        'date_paid' => $request->date_paid,
+    ]);
+
+    return redirect()->route('admin.payment.form')->with('success', 'Payment updated successfully!');
+}
+
+public function deletePayment(Request $request)
+{
+    $request->validate([
+        'payment_id' => 'required|exists:payments,payment_id',
+    ]);
+
+    $payment = Payment::find($request->payment_id);
+
+    if ($payment) {
+        $payment->delete();
+        return redirect()->route('admin.payment.form')->with('success', 'Payment deleted successfully.');
     }
 
-    // Add New Payment
-    public function addPayment(Request $request)
-    {
-        $request->validate([
-            'member_id' => 'required|exists:members,member_id',
-            'subscription_id' => 'required|exists:subscriptions,subscription_id',
-            'amount' => 'required|numeric|min:0',
-            'date_of_join' => 'required|date',
-        ]);
-
-        Payment::create($request->all());
-
-        return redirect()->route('admin.payments')->with('success', 'Payment added successfully.');
-    }
+    return redirect()->route('admin.payment.form')->with('error', 'Payment not found.');
+}
 
     // Show Inventory Management
     public function showInventory()
@@ -247,43 +293,42 @@ class AdminController extends Controller
 
     return redirect()->back()->with('success', 'Member registered successfully!');
 }
+public function updateMember(Request $request)
+{
+    $request->validate([
+        'id' => 'required|exists:members,member_id',
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        'contact_number' => 'required|string|max:15',
+        'date_joined' => 'required|date',
+    ]);
 
+    $member = Member::find($request->id);
 
-    // Update Member
-    public function updateMember(Request $request)
-    {
-        $request->validate([
-            'member_id' => 'required|exists:members,member_id',
-            'first_name' => 'required|string|max:255',
-            'middle_name' => 'nullable|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'suffix_name' => 'nullable|string|max:55',
-            'email' => 'required|string|email|max:255',
-            'contact_number' => 'required|string|max:255',
-            'subscription_id' => 'required|exists:subscriptions,subscription_id',
-            'amount' => 'required|numeric|min:0',
-            'date_joined' => 'required|date',
-            'date_expired' => 'nullable|date',
-        ]);
+    $subscription = Subscription::find($request->subscription_id);
+    $dateExpired = Carbon::parse($request->date_joined)->addMonths($subscription->validity);
 
-        $member = Member::find($request->member_id);
-        $member->update($request->all());
+    $member->update([
+        'first_name' => $request->first_name,
+        'last_name' => $request->last_name,
+        'subscription_id' => $request->subscription_id,
+        'contact_number' => $request->contact_number,
+        'date_joined' => $request->date_joined,
+        'date_expired' => $dateExpired,
+    ]);
 
-        return redirect()->route('admin.member_management')->with('success', 'Member updated successfully.');
-    }
+    return redirect()->back()->with('success', 'Member updated successfully!');
+}
 
-    // Delete Member
-    public function deleteMember(Request $request)
-    {
-        $member = Member::find($request->member_id);
+public function deleteMember($id)
+{
+    $member = Member::findOrFail($id);
+    $member->delete();
 
-        if ($member) {
-            $member->delete();
-            return redirect()->route('admin.member_management')->with('success', 'Member deleted successfully.');
-        }
+    return redirect()->route('admin.member_management')->with('success', 'Member deleted successfully.');
+}
 
-        return redirect()->route('admin.member_management')->with('error', 'Member not found.');
-    }
     public function getSubscriptionDetails($id)
     {
         $subscription = Subscription::find($id);

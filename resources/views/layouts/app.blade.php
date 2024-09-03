@@ -17,31 +17,39 @@
         }
 
         /* Notification Bell Styling */
-        .notification-bell {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: #fff;
-            border-radius: 50%;
-            padding: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-        }
+    .notification-bell {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: #fff;
+        border-radius: 50%;
+        padding: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        cursor: pointer;
+        transition: background 0.3s, box-shadow 0.3s;
+    }
 
-        .notification-bell i {
-            font-size: 24px;
-            color: #333;
-        }
+    .notification-bell:hover {
+        background: #f0f0f0;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .notification-bell i {
+        font-size: 28px;
+        color: #333;
+    }
     </style>
 </head>
 <body class="bg-[#ECE9E9]">
     @stack('styles')
 
     <!-- Notification Bell -->
+    @unless(request()->routeIs('login'))
     <div class="notification-bell">
         <i class="fas fa-bell"></i>
     </div>
+    @endunless
 
     <!-- Main Content -->
     <div class="flex-1 p-6">

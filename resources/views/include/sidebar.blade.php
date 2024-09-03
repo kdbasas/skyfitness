@@ -51,8 +51,8 @@
         </li>
 
         <!-- Payment -->
-        <li class="group relative py-3 px-4 rounded-lg transition-all duration-200 hover:bg-gray-700 {{ request()->routeIs('admin.payments') ? 'bg-gray-700' : '' }}">
-            <a href="#" class="flex items-center text-white text-sm transition-all duration-200 group-hover:text-gray-300">
+        <li class="group relative py-3 px-4 rounded-lg transition-all duration-200 hover:bg-gray-700 {{ request()->routeIs('admin.payment.form') ? 'bg-gray-700' : '' }}">
+            <a href="{{ route('admin.payment.form') }}" class="flex items-center text-white text-sm transition-all duration-200 group-hover:text-gray-300">
                 <i class="fas fa-money-bill-wave mr-4 text-xl transition-transform duration-200 group-hover:scale-110"></i>
                 <span class="text-base font-medium">Payment</span>
             </a>

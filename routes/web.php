@@ -29,11 +29,17 @@ Route::group(['middleware' => ['auth', 'admin']], function () {
     Route::post('/admin/subscription/add', [AdminController::class, 'addSubscription'])->name('admin.subscription.add');
     Route::put('/admin/subscription/update', [AdminController::class, 'updateSubscription'])->name('admin.subscription.update');
     Route::delete('/admin/subscription/delete', [AdminController::class, 'deleteSubscription'])->name('admin.subscription.delete');
+    Route::get('/admin/payments', [AdminController::class, 'showPaymentForm'])->name('admin.payment.form');
+    Route::post('/admin/payments/add', [AdminController::class, 'addPayment'])->name('admin.payment.add');
+    Route::put('/admin/payments/update', [AdminController::class, 'updatePayment'])->name('admin.payment.update');
+    Route::delete('/admin/payments/delete', [AdminController::class, 'deletePayment'])->name('admin.payment.delete');
+    Route::get('/admin/members/{id}/subscription', [AdminController::class, 'getMemberSubscription']);
     Route::get('/admin/inventory', [AdminController::class, 'showInventory'])->name('admin.inventory');
     Route::post('/admin/inventory/add', [AdminController::class, 'addEquipment'])->name('admin.inventory.add');
     Route::get('/admin/members', [AdminController::class, 'showMembers'])->name('admin.member_management');
     Route::post('/admin/member_management/add', [AdminController::class, 'addMember'])->name('admin.member.add');
-    Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('admin.member_management.update');
+    Route::delete('admin/member/delete/{id}', [AdminController::class, 'deleteMember'])->name('admin.member.delete');
+    Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('admin.member.update');
     Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('admin.reports');
     Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
 });
