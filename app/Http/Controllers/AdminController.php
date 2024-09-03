@@ -56,14 +56,35 @@ class AdminController extends Controller
         }
 
         if ($request->hasFile('profile_image')) {
-            $profileImage = $request->file('profile_image')->store('profile_pictures/admin', 'public');
+            $profileImage = $request->file('profile_image')->store('img', 'public');
             $admin->profile_image = $profileImage;
         }
 
         $admin->save();
         return redirect()->route('admin.profile')->with('success', 'Profile updated successfully.');
     }
+    public function updatePicture(Request $request)
+{
+    $request->validate([
+        'profile_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
 
+    $admin = Auth::user();
+
+    if ($request->hasFile('profile_image')) {
+        $imageName = time() . '.' . $request->profile_image->extension();
+        $request->profile_image->storeAs('public/img', $imageName);
+        
+        $admin->profile_image = $imageName;
+        $admin->save();
+    }
+
+    return redirect()->route('admin.profile')->with('success', 'Profile picture updated successfully.');
+}
+
+
+
+    
     // Show Registration Form
     public function showRegistrationForm()
     {
