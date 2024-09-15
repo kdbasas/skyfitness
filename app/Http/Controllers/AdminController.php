@@ -13,6 +13,7 @@ use App\Models\Attendance;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Session;
 
 
 class AdminController extends Controller
@@ -20,8 +21,45 @@ class AdminController extends Controller
     // Show Admin Dashboard
     public function dashboard()
     {
-        return view('admin.dashboard');
+        $admin = Auth::user();
+        $notifications = [];
+
+        // Generate a welcome notification if this is the first login after session start
+        if (Session::has('just_logged_in')) {
+            $notifications[] = [
+                'message' => "Welcome, {$admin->name}!",
+                'type' => 'info',
+            ];
+
+            Session::forget('just_logged_in'); // Reset login notification
+        }
+
+        // Subscription Expiry Notification (5 days before expiry)
+        $expiringMembers = Member::whereDate('date_expired', '<=', Carbon::now()->addDays(5))->get();
+    foreach ($expiringMembers as $member) {
+        $notifications[] = [
+            'message' => "Subscription for {$member->first_name} {$member->last_name} is expiring in 5 days!",
+            'type' => 'warning',
+        ];
     }
+
+        return view('admin.dashboard', compact('notifications'));
+    }
+    public function markAsRead($id)
+{
+    $notification = Auth::user()->notifications()->find($id);
+    if ($notification) {
+        $notification->update(['read' => true]);
+        return response()->json(['success' => true]);
+    }
+    return response()->json(['success' => false], 404);
+}
+
+public function getUnreadCount()
+{
+    $count = Auth::user()->notifications()->where('read', false)->count();
+    return response()->json(['count' => $count]);
+}
 
     // Show Admin Profile
     public function showProfile()
@@ -82,9 +120,6 @@ class AdminController extends Controller
     return redirect()->route('admin.profile')->with('success', 'Profile picture updated successfully.');
 }
 
-
-
-    
     // Show Registration Form
     public function showRegistrationForm()
     {

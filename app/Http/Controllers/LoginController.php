@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Session;
 
 class LoginController extends Controller
 {
@@ -25,6 +26,7 @@ class LoginController extends Controller
     if (Auth::attempt($credentials)) {
         $user = Auth::user();
         if ($user->role === 'admin') {
+            Session::put('just_logged_in', true);
             return redirect()->route('admin.dashboard');
         } 
         //elseif ($user->role === 'staff') {
@@ -35,6 +37,16 @@ class LoginController extends Controller
     }
 
     return redirect()->route('login')->withErrors(['email' => 'Invalid credentials']);
+}
+public function markNotificationAsRead(Request $request, $id)
+{
+    // Find and update the notification status
+    $notification = Notification::find($id);
+    if ($notification) {
+        $notification->update(['read' => true]);
+        return response()->json(['success' => true]);
+    }
+    return response()->json(['success' => false], 404);
 }
 
     public function logout()

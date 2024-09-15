@@ -18,6 +18,10 @@ Route::get('/', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
+
+Route::post('/notifications/mark-as-read/{id}', [AdminController::class, 'markAsRead'])->name('notifications.markAsRead');
+Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount'])->name('notifications.getUnreadCount');
+
 // Admin routes
 Route::group(['middleware' => ['auth', 'admin']], function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
