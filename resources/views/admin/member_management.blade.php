@@ -8,9 +8,9 @@
     <!-- Main Content -->
     <div class="flex-1 ml-64 p-6 bg-[#ECE9E9]">
         <!-- Header Section -->
-        <div class="flex items-center justify-center mb-6 p-4 bg-[#1A1363] text-white">
+        <div class="flex items-center justify-center mb-6 p-4 bg-transparent text-[#1A1363]"style="margin-top: -20px;">
             <img src="{{ asset('img/logosky 2.png') }}" alt="Gym Logo" class="w-40 h-30 mr-4">
-            <h1 class="text-3xl font-bold">SKY FITNESS GYM</h1>
+            <h1 class="text-4xl font-bold">ROXAS SKY FITNESS GYM</h1>
         </div>
 
         <!-- Flash Messages -->
@@ -128,7 +128,15 @@
                             class="px-4 py-2 ml-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600"
                         >
                             Delete
-                        </button>
+                         </button>
+                        <!-- New Renew Button -->
+                        <button 
+                    onclick="openRenewPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
+                    class="px-4 py-2 ml-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
+                >
+                    Renew
+                </button>
+
                     </td>
                 </tr>
             @empty
@@ -203,6 +211,36 @@
         </form>
     </div>
 </div>
+<!-- Renew Member Pop-Up -->
+<div id="renew-popup" class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 hidden">
+    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+        <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Renew Member</h2>
+        <p class="text-lg mb-4">Are you sure you want to renew <span id="renew_member_name"></span>'s subscription?</p>
+        <form id="renew-form" action="#" method="POST">
+            @csrf
+            @method('PUT')
+
+            <!-- Select New Subscription -->
+            <div class="flex flex-col mb-4">
+                <label for="renew_subscription" class="text-sm font-medium text-black">Select Subscription</label>
+                <select id="renew_subscription" name="subscription_id" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+                    @foreach($subscriptions as $subscription)
+                        <option value="{{ $subscription->subscription_id }}" data-validity="{{ $subscription->validity }}">{{ $subscription->subscription_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Hidden Inputs for Date Joined and Date Expired -->
+            <input type="hidden" id="renew_date_joined" name="date_joined">
+            <input type="hidden" id="renew_date_expired" name="date_expired">
+
+            <div class="flex space-x-4 mt-4">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700">Renew</button>
+                <button type="button" onclick="closeRenewPopup()" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 
 <script>
@@ -235,6 +273,43 @@ function openDeletePopup(id, fullName) {
 
 function closeDeletePopup() {
     document.getElementById('delete-popup').classList.add('hidden');
+}
+function openRenewPopup(id, firstName, lastName, currentDateJoined, currentDateExpired) {
+    document.getElementById('renew_member_name').textContent = `${firstName} ${lastName}`;
+
+    // Set the form action dynamically based on member ID
+    document.getElementById('renew-form').action = `{{ route('admin.member.renew', ':id') }}`.replace(':id', id);
+
+    // Set the date_joined to the existing date_expired when renewing
+    const existingDateExpired = new Date(currentDateExpired);
+    const newDateJoined = existingDateExpired.toISOString().split('T')[0]; // Set Date Joined to the existing Date Expired
+    document.getElementById('renew_date_joined').value = newDateJoined;
+
+    // Clear previous date_expired value
+    document.getElementById('renew_date_expired').value = '';
+
+    // Clear previous event listeners to avoid stacking
+    const subscriptionSelect = document.getElementById('renew_subscription');
+    subscriptionSelect.removeEventListener('change', updateExpirationDate);
+    
+    // Add event listener for subscription change
+    subscriptionSelect.addEventListener('change', updateExpirationDate);
+
+    // Trigger update for the initial subscription selection (if any)
+    updateExpirationDate.call(subscriptionSelect);
+
+    document.getElementById('renew-popup').classList.remove('hidden');
+}
+
+function updateExpirationDate() {
+    const validity = this.options[this.selectedIndex].getAttribute('data-validity'); // Get the validity period
+    const currentDateJoined = new Date(document.getElementById('renew_date_joined').value); // Get the new Date Joined
+    const newDateExpired = new Date(currentDateJoined.setMonth(currentDateJoined.getMonth() + parseInt(validity))); // Calculate new expiration date
+    document.getElementById('renew_date_expired').value = newDateExpired.toISOString().split('T')[0]; // Format for input
+}
+
+function closeRenewPopup() {
+    document.getElementById('renew-popup').classList.add('hidden');
 }
 
 </script>

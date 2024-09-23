@@ -25,6 +25,9 @@ Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCou
 // Admin routes
 Route::group(['middleware' => ['auth', 'admin']], function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/report-analytics', [AdminController::class, 'reportAnalytics'])->name('admin.reportAnalytics');
+    Route::get('/admin/report/download', [AdminController::class, 'downloadReport'])->name('admin.downloadReport');
+    Route::get('/admin/print-report', [AdminController::class, 'printReport'])->name('admin.printReport');
     Route::get('/admin/profile', [AdminController::class, 'showProfile'])->name('admin.profile');
     Route::put('/admin/profile/update', [AdminController::class, 'updateProfile'])->name('admin.profile.update');
     Route::put('/admin/profile/picture', [AdminController::class, 'updatePicture'])->name('admin.profile.update_picture');
@@ -38,14 +41,21 @@ Route::group(['middleware' => ['auth', 'admin']], function () {
     Route::put('/admin/payments/update', [AdminController::class, 'updatePayment'])->name('admin.payment.update');
     Route::delete('/admin/payments/delete', [AdminController::class, 'deletePayment'])->name('admin.payment.delete');
     Route::get('/admin/members/{id}/subscription', [AdminController::class, 'getMemberSubscription']);
-    Route::get('/admin/inventory', [AdminController::class, 'showInventory'])->name('admin.inventory');
-    Route::post('/admin/inventory/add', [AdminController::class, 'addEquipment'])->name('admin.inventory.add');
+    Route::get('/admin/inventory', [AdminController::class, 'showInventory'])->name('admin.equipment_inventory');
+    Route::get('/admin/inventory/{id}', [AdminController::class, 'showInventory'])->name('admin.inventory.details'); 
+    Route::post('/admin/inventory/add', [AdminController::class, 'addEquipment'])->name('admin.equipment.add');
+    Route::put('/admin/inventory/update', [AdminController::class, 'updateEquipment'])->name('admin.inventory.update');
+    Route::delete('/admin/inventory/delete/{id}', [AdminController::class, 'deleteEquipment'])->name('admin.inventory.delete');
     Route::get('/admin/members', [AdminController::class, 'showMembers'])->name('admin.member_management');
     Route::post('/admin/member_management/add', [AdminController::class, 'addMember'])->name('admin.member.add');
     Route::delete('admin/member/delete/{id}', [AdminController::class, 'deleteMember'])->name('admin.member.delete');
     Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('admin.member.update');
     Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('admin.reports');
     Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
+    Route::put('/admin/member/renew/{id}', [AdminController::class, 'renew'])->name('admin.member.renew');
+    Route::get('/subscription/{id}', [AdminController::class, 'showValidity']);
+
+
 });
 
 Route::group(['middleware' => ['auth', 'staff']], function () {

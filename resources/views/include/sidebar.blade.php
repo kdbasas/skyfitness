@@ -68,15 +68,16 @@
 
         <!-- Inventory -->
         <li>
-            <a href="#" class="sidebar-button {{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
+            <a href="{{ route('admin.equipment_inventory') }}" class="sidebar-button {{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
                 <i class="fas fa-dumbbell text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Inventory</span>
             </a>
         </li>
 
+
         <!-- Report Analytics -->
         <li>
-            <a href="#" class="sidebar-button {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
+            <a href="{{ route('admin.reports') }}" class="sidebar-button {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
                 <i class="fas fa-chart-line text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Report Analytics</span>
             </a>

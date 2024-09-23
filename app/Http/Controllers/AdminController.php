@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\Payment;
@@ -11,6 +12,7 @@ use App\Models\Equipment;
 use App\Models\Member;
 use App\Models\Attendance;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
@@ -45,6 +47,61 @@ class AdminController extends Controller
 
         return view('admin.dashboard', compact('notifications'));
     }
+    public function showReports(Request $request)
+{
+    $selectedMonth = $request->input('month', Carbon::now()->format('Y-m')); // Default to current month
+    $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
+                                  ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+                                  ->count();
+
+                                  $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
+                                  ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
+                                  ->sum('amount');
+           
+
+
+    return view('admin.report', compact('selectedMonth', 'memberRegistrations', 'totalRevenue'));
+}
+public function reportAnalytics(Request $request)
+{
+    $selectedMonth = $request->get('month', now()->format('Y-m'));
+
+    // Fetch members registered in the selected month
+    $members = Member::whereMonth('date_joined', '=', date('m', strtotime($selectedMonth)))
+                     ->whereYear('date_joined', '=', date('Y', strtotime($selectedMonth)))
+                     ->with('subscription') // Include subscription details
+                     ->get();
+
+    $memberRegistrations = $members->count();
+
+    // Calculate total revenue from payments
+    $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
+                           ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
+                           ->sum('amount');
+
+    return view('admin.report', compact('selectedMonth', 'memberRegistrations', 'totalRevenue', 'members'));
+}
+
+
+
+public function printReport(Request $request)
+{
+    $selectedMonth = $request->input('month');
+
+    // Fetch the data needed for the report
+    $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
+                                  ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+                                  ->count();
+
+    $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
+                           ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
+                           ->sum('amount');
+
+    // Load the report PDF view
+    return view('admin.report_pdf', compact('memberRegistrations', 'totalRevenue', 'selectedMonth'));
+}
+
+
     public function markAsRead($id)
 {
     $notification = Auth::user()->notifications()->find($id);
@@ -277,35 +334,104 @@ public function deletePayment(Request $request)
 }
 
     // Show Inventory Management
-    public function showInventory()
+    public function showInventory($id = null)
     {
-        $equipment = Equipment::all();
-        return view('admin.inventory', compact('equipment'));
+        if ($id) {
+            $equipments = Equipment::findOrFail($id);
+            return view('admin.equipment_inventory_detail', compact('equipments')); // Modify to your detail view if needed
+        }
+
+        $equipments = Equipment::all();
+        return view('admin.equipment_inventory', compact('equipments'));
     }
 
     // Add New Equipment
-    public function addEquipment(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'picture' => 'nullable|image|max:2048',
-            'total_number' => 'required|integer|min:1',
-            'status' => 'required|in:active,inactive',
-        ]);
+    // Add New Equipment
+public function addEquipment(Request $request)
+{
+    $request->validate([
+        'equipment_name' => 'required|string|max:255',
+        'total_number' => 'required|integer',
+        'status' => 'required|in:active,inactive',
+        'equipment_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // Adjust max size as needed
+    ]);
 
-        $picture = $request->hasFile('picture')
-            ? $request->file('picture')->store('equipment_pictures', 'public')
-            : null;
+    $equipment = new Equipment();
+    $equipment->equipment_name = $request->equipment_name;
+    $equipment->total_number = $request->total_number;
+    $equipment->status = $request->status;
 
-        Equipment::create([
-            'name' => $request->input('name'),
-            'picture' => $picture,
-            'total_number' => $request->input('total_number'),
-            'status' => $request->input('status'),
-        ]);
-
-        return redirect()->route('admin.inventory')->with('success', 'Equipment added successfully.');
+    // Handle picture upload
+    if ($request->hasFile('equipment_picture')) {
+        $fileWithExtension = $request->file('equipment_picture');
+        $filename = pathinfo($fileWithExtension->getClientOriginalName(), PATHINFO_FILENAME);
+        $extension = $fileWithExtension->getClientOriginalExtension();
+        $filenameToStore = $filename . '_' . time() . '.' . $extension;
+        $fileWithExtension->storeAs('public/img/equipment', $filenameToStore); 
+        $equipment->equipment_picture = $filenameToStore; // Save path in your database
     }
+
+    $equipment->save();
+
+    return redirect()->back()->with('success', 'Equipment added successfully!');
+}
+
+
+
+    // Update Equipment
+    public function updateEquipment(Request $request)
+{
+    $request->validate([
+        'equipment_id' => 'required|exists:equipments,equipment_id',
+        'equipment_name' => 'required|string|max:255',
+        'total_number' => 'required|integer|min:1',
+        'status' => 'required|in:active,inactive',
+        'equipment_picture' => 'nullable|image|mimes:jpeg,png,bmp,biff|max:4096',
+    ]);
+
+    $equipment = Equipment::find($request->equipment_id);
+
+    // Update picture if provided
+    if ($request->hasFile('equipment_picture')) {
+        // Store the new picture
+        $newPicture = $request->file('equipment_picture')->store('img/equipment', 'public');
+        
+        // Delete the old picture if it exists
+        if ($equipment->equipment_picture) {
+            Storage::delete('public/' . $equipment->equipment_picture); // Delete the old picture
+        }
+        $equipment->equipment_picture = $newPicture;
+    }
+
+    $equipment->update([
+        'equipment_name' => $request->input('equipment_name'),
+        'total_number' => $request->input('total_number'),
+        'status' => $request->input('status'),
+    ]);
+
+    return redirect()->route('admin.equipment_inventory')->with('success', 'Equipment updated successfully.');
+}
+
+
+    // Delete Equipment
+    // Delete Equipment
+public function deleteEquipment(Request $request, $id)
+{
+    $equipment = Equipment::find($id);
+
+    if ($equipment) {
+        // Delete the equipment picture from storage if it exists
+        if ($equipment->equipment_picture && Storage::exists('public/img/equipment/' . $equipment->equipment_picture)) {
+            Storage::delete('public/img/equipment/' . $equipment->equipment_picture); // Delete picture file
+        }
+        
+        $equipment->delete(); // Now delete the equipment
+        return redirect()->back()->with('success', 'Equipment deleted successfully.');
+    }
+
+    return redirect()->route('admin.equipment_inventory')->with('error', 'Equipment not found.');
+}
+
 
     // Show Member Management
     public function showMembers()
@@ -404,5 +530,46 @@ public function deleteMember($id)
     public function handleAttendance(Request $request)
     {
         // Your attendance handling logic here
+    }
+    public function renew(Request $request, $id)
+{
+    $member = Member::findOrFail($id);
+    $member->subscription_id = $request->input('subscription_id');
+    
+    // Optionally validate the new date_expired before saving
+    if ($request->has('date_expired')) {
+        $member->date_expired = $request->input('date_expired');
+    }
+
+    $member->save();
+
+    return redirect()->back()->with('success', 'Member renewed successfully.');
+}
+
+
+
+public function showValidity($id)
+{
+    $subscription = Subscription::findOrFail($id);
+    return response()->json(['validity' => $subscription->validity]);
+}
+public function downloadReport(Request $request)
+{
+    $selectedMonth = $request->input('month');
+
+    // Fetch report data as above
+    $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
+                                  ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+                                  ->count();
+
+    $totalRevenue = Payment::whereYear('payment_date', Carbon::parse($selectedMonth)->year)
+                           ->whereMonth('payment_date', Carbon::parse($selectedMonth)->month)
+                           ->sum('amount');
+
+    // Load the report view into PDF
+    $pdf = PDF::loadView('admin.report_pdf', compact('memberRegistrations', 'totalRevenue', 'selectedMonth'));
+
+    // Download the PDF file
+    return $pdf->download('report_analytics_' . $selectedMonth . '.pdf');
     }
 }

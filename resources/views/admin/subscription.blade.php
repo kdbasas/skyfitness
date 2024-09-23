@@ -8,9 +8,9 @@
     <!-- Main Content -->
     <div class="flex-1 ml-64 p-6 bg-[#ECE9E9]">
         <!-- Header Section -->
-        <div class="flex items-center justify-center mb-6 p-4 bg-[#1A1363] text-white">
+        <div class="flex items-center justify-center mb-6 p-4 bg-transparent text-[#1A1363]"style="margin-top: -20px;">
             <img src="{{ asset('img/logosky 2.png') }}" alt="Gym Logo" class="w-40 h-30 mr-4">
-            <h1 class="text-3xl font-bold">SKY FITNESS GYM</h1>
+            <h1 class="text-4xl font-bold">ROXAS SKY FITNESS GYM</h1>
         </div>
 
         <!-- Subscription Form -->
