@@ -23,7 +23,7 @@ Route::post('/notifications/mark-as-read/{id}', [AdminController::class, 'markAs
 Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount'])->name('notifications.getUnreadCount');
 
 // Admin routes
-Route::group(['middleware' => ['auth', 'admin']], function () {
+Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBackHistory::class]], function () {
     Route::get('/admin/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
     Route::get('/admin/report-analytics', [AdminController::class, 'reportAnalytics'])->name('admin.reportAnalytics');
     Route::get('/admin/report/download', [AdminController::class, 'downloadReport'])->name('admin.downloadReport');

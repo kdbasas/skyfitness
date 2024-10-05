@@ -90,6 +90,15 @@
                 <span class="text-base font-medium">Attendance</span>
             </a>
         </li>
+        <li>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="sidebar-button w-full text-left">
+                    <i class="fas fa-sign-out-alt text-white text-lg mr-3"></i>
+                    <span class="text-base font-medium">Logout</span>
+                </button>
+            </form>
+        </li>
     </ul>
 </div>
 

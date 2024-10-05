@@ -52,6 +52,7 @@ public function markNotificationAsRead(Request $request, $id)
     public function logout()
     {
         Auth::logout();
+        Session::flush();
         return redirect()->route('login');
     }
 }

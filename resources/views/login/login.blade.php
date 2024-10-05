@@ -33,6 +33,11 @@
                 </div>
                 <button type="submit" class="w-full h-16 rounded-full bg-dark-blue text-white text-lg font-bold">Login</button>
             </form>            
+            
+            <!-- Attendance Button -->
+            <div class="mt-6 text-center">
+                <a href="#" class="attendance-button">Attendance</a>
+            </div>       
         </div>
     </div>
 
@@ -71,7 +76,6 @@
     .h-16 {
         height: 64px; /* Adjust as needed */
     }
-    /* Additional styles for oblong button */
     .rounded-full {
         border-radius: 9999px; /* Makes the button fully rounded (oblong) */
     }
@@ -81,21 +85,36 @@
         font-family: 'Roboto', sans-serif; /* Ensure Roboto font for placeholder text */
         font-weight: bold; /* Make the placeholder text bold */
     }
-    /* Adjust icon positioning */
     .fa-user, .fa-lock {
         font-size: 1.25rem;
     }
-    /* Ensure icons are centered vertically and aligned to the left */
     .relative {
         position: relative;
     }
     input {
         padding-left: 3.5rem; /* Adjust padding to fit the icon */
     }
-    /* Adjust icon vertical alignment */
     .fa-user, .fa-lock {
         top: 65%;
         transform: translateY(-50%);
+    }
+
+    /* Styles for Attendance Button */
+    .attendance-button {
+        display: inline-block;
+        padding: 15px 30px;
+        background-color: #0C0B25;
+        color: #fff;
+        font-size: 1.125rem; /* Larger text size */
+        font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 30px; /* Rounded button */
+        transition: background-color 0.3s ease;
+    }
+
+    .attendance-button:hover {
+        background-color: #343434; /* Darken button color on hover */
+        text-decoration: none; /* Remove underline on hover */
     }
 </style>
 @endpush

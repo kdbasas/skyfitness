@@ -16,6 +16,7 @@ use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
+use App\Helpers\QrCodeGenerator;
 
 
 class AdminController extends Controller
@@ -471,7 +472,12 @@ public function deleteEquipment(Request $request, $id)
     }
 
     // Store the validated data
-    Member::create($validated);
+    $member = Member::create($validated);
+
+    // Generate QR code
+    $qrCodeGenerator = new QrCodeGenerator();
+    $qrCodeData = 'Member ID: ' . $member->member_id . ' - Name: ' . $member->first_name . ' ' . $member->last_name;
+    $qrCodeGenerator->generate($qrCodeData, 'member_' . $member->member_id . '.png');
 
     return redirect()->back()->with('success', 'Member registered successfully!');
 }
@@ -545,8 +551,6 @@ public function deleteMember($id)
 
     return redirect()->back()->with('success', 'Member renewed successfully.');
 }
-
-
 
 public function showValidity($id)
 {

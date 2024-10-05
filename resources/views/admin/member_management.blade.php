@@ -104,19 +104,24 @@
                 <th class="px-4 py-2 text-left">Contact Number</th>
                 <th class="px-4 py-2 text-left">Date Joined</th>
                 <th class="px-4 py-2 text-left">Date Expired</th>
+                <th class="px-4 py-2 text-left">QR Code</th>
                 <th class="px-4 py-2 text-left">Actions</th>
             </tr>
         </thead>
         <tbody>
             @forelse($members as $member)
                 <tr>
-                    <td class="px-4 py-2">{{ $member->first_name }}</td>
-                    <td class="px-4 py-2">{{ $member->last_name }}</td>
-                    <td class="px-4 py-2">{{ $member->subscription->subscription_name }}</td>
-                    <td class="px-4 py-2">{{ $member->contact_number }}</td>
-                    <td class="px-4 py-2">{{ \Carbon\Carbon::parse($member->date_joined)->format('M d, Y') }}</td>
-                    <td class="px-4 py-2">{{ $member->date_expired ? \Carbon\Carbon::parse($member->date_expired)->format('M d, Y') : 'N/A' }}</td>
-                    <td class="px-4 py-2 flex items-center space-x-2">
+                    <td class="px-4 py-2 border-b">{{ $member->first_name }}</td>
+                    <td class="px-4 py-2 border-b">{{ $member->last_name }}</td>
+                    <td class="px-4 py-2 border-b">{{ $member->subscription->subscription_name }}</td>
+                    <td class="px-4 py-2 border-b">{{ $member->contact_number }}</td>
+                    <td class="px-4 py-2 border-b">{{ \Carbon\Carbon::parse($member->date_joined)->format('M d, Y') }}</td>
+                    <td class="px-4 py-2 border-b">{{ $member->date_expired ? \Carbon\Carbon::parse($member->date_expired)->format('M d, Y') : 'N/A' }}</td>
+                    <td class="px-4 py-2 border-b text-center">
+                        <img src="{{ asset('img/qrcode/member_' . $member->member_id . '.png') }}" alt="QR Code" class="w-24 h-24 mx-auto">
+                        <a href="{{ asset('img/qrcode/member_' . $member->member_id . '.png') }}" download class="bg-gray-300 text-black px-2 py-1 rounded mt-1 inline-block">Download QR</a>
+                    </td>
+                    <td class="px-4 py-2 border-b flex items-center space-x-2">
                         <button 
                             onclick="openEditPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->subscription_id }}', '{{ $member->contact_number }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
                             class="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-yellow-600"
@@ -128,26 +133,24 @@
                             class="px-4 py-2 ml-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600"
                         >
                             Delete
-                         </button>
+                        </button>
                         <!-- New Renew Button -->
                         <button 
-                    onclick="openRenewPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
-                    class="px-4 py-2 ml-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
-                >
-                    Renew
-                </button>
-
+                            onclick="openRenewPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
+                            class="px-4 py-2 ml-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
+                        >
+                            Renew
+                        </button>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="px-4 py-2 text-center">No members found.</td>
+                    <td colspan="8" class="px-4 py-2 text-center border-b">No members found.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
 </div>
-
 
        <!-- Edit Member Pop-Up -->
 <div id="edit-popup" class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 hidden">
