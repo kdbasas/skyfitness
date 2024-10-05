@@ -2,6 +2,7 @@
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GymStaffController;
+use App\Http\Controllers\MemberController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -63,4 +64,8 @@ Route::group(['middleware' => ['auth', 'staff']], function () {
     Route::get('/staff/profile', [GymStaffController::class, 'showProfile'])->name('staff.profile');
     Route::post('/staff/profile/update', [GymStaffController::class, 'updateProfile'])->name('staff.profile.update');
     // Other staff routes...
+});
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/member/attendance', [MemberController::class, 'showAttendance'])->name('member.attendance');
+    Route::post('/member/attendance/generate', [MemberController::class, 'generateAttendance'])->name('member.attendance.generate');
 });

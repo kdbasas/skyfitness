@@ -85,7 +85,7 @@
 
         <!-- Attendance -->
         <li>
-            <a href="#" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
+            <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
                 <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Attendance</span>
             </a>

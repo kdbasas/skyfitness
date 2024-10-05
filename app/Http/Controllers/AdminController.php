@@ -533,10 +533,51 @@ public function deleteMember($id)
     }
     
     // Handle Attendance
-    public function handleAttendance(Request $request)
+    public function showAttendance()
     {
-        // Your attendance handling logic here
+        $attendances = Attendance::all();
+        $attendanceRecords = $attendances->map(function ($attendance) {
+            return [
+                'date' => $attendance->date,
+                'time' => $attendance->check_in_time . ' - ' . $attendance->check_out_time,
+                'member_name' => $attendance->member->first_name . ' ' . $attendance->member->last_name,
+                'check_in_out' => $attendance->check_in_time ? 'Check-in' : 'Check-out',
+            ];
+        });
+    
+        return view('admin.attendance', compact('attendanceRecords'));
     }
+    public function handleAttendance(Request $request)
+{
+    $request->validate([
+        'member_id' => 'required|exists:members,member_id',
+        'check_in_out' => 'required|in:check-in,check-out',
+    ]);
+
+    $member = Member::find($request->member_id);
+    $attendance = Attendance::where('member_id', $member->member_id)->whereDate('date', Carbon::today())->first();
+
+    if ($attendance) {
+        if ($request->check_in_out == 'check-in') {
+            $attendance->check_in_time = Carbon::now()->format('H:i:s');
+        } elseif ($request->check_in_out == 'check-out') {
+            $attendance->check_out_time = Carbon::now()->format('H:i:s');
+        }
+        $attendance->save();
+    } else {
+        $attendance = new Attendance();
+        $attendance->member_id = $member->member_id;
+        $attendance->date = Carbon::today()->format('Y-m-d');
+        if ($request->check_in_out == 'check-in') {
+            $attendance->check_in_time = Carbon::now()->format('H:i:s');
+        } elseif ($request->check_in_out == 'check-out') {
+            $attendance->check_out_time = Carbon::now()->format('H:i:s');
+        }
+        $attendance->save();
+    }
+
+    return redirect()->back()->with('success', 'Attendance recorded successfully!');
+}
     public function renew(Request $request, $id)
 {
     $member = Member::findOrFail($id);

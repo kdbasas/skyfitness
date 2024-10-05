@@ -118,9 +118,8 @@
                     <td class="px-4 py-2 border-b">{{ \Carbon\Carbon::parse($member->date_joined)->format('M d, Y') }}</td>
                     <td class="px-4 py-2 border-b">{{ $member->date_expired ? \Carbon\Carbon::parse($member->date_expired)->format('M d, Y') : 'N/A' }}</td>
                     <td class="px-4 py-2 border-b text-center">
-                        <img src="{{ asset('img/qrcode/member_' . $member->member_id . '.png') }}" alt="QR Code" class="w-24 h-24 mx-auto">
-                        <a href="{{ asset('img/qrcode/member_' . $member->member_id . '.png') }}" download class="bg-gray-300 text-black px-2 py-1 rounded mt-1 inline-block">Download QR</a>
-                    </td>
+                        <img src="{{ asset('storage/img/qrcode/member_' . $member->member_id . '.png') }}" alt="QR Code" class="w-24 h-24 mx-auto">
+                        <a href="{{ asset('storage/img/qrcode/member_' . $member->member_id . '.png') }}" download="member_{{ $member->member_id }}.png" class="bg-gray-300 text-black px-2 py-1 rounded mt-1 inline-block">Download QR</a>
                     <td class="px-4 py-2 border-b flex items-center space-x-2">
                         <button 
                             onclick="openEditPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->subscription_id }}', '{{ $member->contact_number }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
