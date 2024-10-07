@@ -36,7 +36,7 @@
             
             <!-- Attendance Button -->
             <div class="mt-6 text-center">
-                <a href="{{ route('member.attendance') }}" class="attendance-button">Attendance</a>
+                <a href="{{ route('member.attendance.show') }}" class="attendance-button">Attendance</a>
             </div>       
         </div>
     </div>

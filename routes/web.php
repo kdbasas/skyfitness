@@ -2,7 +2,7 @@
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GymStaffController;
-use App\Http\Controllers\MemberController;
+use App\Http\Controllers\AttendanceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -52,7 +52,10 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::delete('admin/member/delete/{id}', [AdminController::class, 'deleteMember'])->name('admin.member.delete');
     Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('admin.member.update');
     Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('admin.reports');
+    Route::post('/admin/attendance/record', [AdminController::class, 'recordAttendance'])->name('admin.recordAttendance');
+    Route::post('/admin/attendance/checkout', [AdminController::class, 'checkOut'])->name('admin.checkOut');
     Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
+
     Route::put('/admin/member/renew/{id}', [AdminController::class, 'renew'])->name('admin.member.renew');
     Route::get('/subscription/{id}', [AdminController::class, 'showValidity']);
 
@@ -65,7 +68,7 @@ Route::group(['middleware' => ['auth', 'staff']], function () {
     Route::post('/staff/profile/update', [GymStaffController::class, 'updateProfile'])->name('staff.profile.update');
     // Other staff routes...
 });
-Route::group(['middleware' => ['auth']], function () {
-    Route::get('/member/attendance', [MemberController::class, 'showAttendance'])->name('member.attendance');
-    Route::post('/member/attendance/generate', [MemberController::class, 'generateAttendance'])->name('member.attendance.generate');
-});
+Route::get('/attendance', [AttendanceController::class, 'showAttendance'])->name('member.attendance.show');
+Route::post('/attendance/generate', [AttendanceController::class, 'generateAttendance'])->name('member.attendance.generate');
+Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->name('member.attendance.check-in');
+Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->name('member.attendance.check-out');

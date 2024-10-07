@@ -149,6 +149,7 @@
             @endforelse
         </tbody>
     </table>
+    {{ $members->links('pagination::simple-default') }}
 </div>
 
        <!-- Edit Member Pop-Up -->

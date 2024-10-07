@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Attendance extends Model
 {
     protected $table = 'attendance'; 
+    protected $primaryKey = 'attendance_id';
     protected $fillable = [
         'member_id',
         'date',
@@ -16,7 +17,7 @@ class Attendance extends Model
     ];
 
     public function member()
-    {
-        return $this->belongsTo(Member::class);
-    }
+{
+    return $this->belongsTo(Member::class, 'member_id', 'member_id');
+}
 }

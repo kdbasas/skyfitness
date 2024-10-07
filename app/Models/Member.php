@@ -17,7 +17,7 @@ class Member extends Model
 
     // Allow mass assignment for these attributes
     protected $fillable = [
-        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'subscription_id', 'amount',
+        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'subscription_id', 'amount','qr_code',
     ];
 
     // Optionally, specify the data types for dates
@@ -30,5 +30,9 @@ class Member extends Model
     public function subscription()
     {
         return $this->belongsTo(Subscription::class, 'subscription_id');
+    }
+    public function attendance()
+    {
+        return $this->hasMany(Attendance::class);
     }
 }

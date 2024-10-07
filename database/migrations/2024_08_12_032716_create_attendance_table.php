@@ -16,6 +16,10 @@ class CreateAttendanceTable extends Migration
             $table->time('check_in_time')->nullable();
             $table->time('check_out_time')->nullable();
             $table->timestamps();
+
+            // Optional improvements
+            $table->index('member_id'); // Adding index for performance
+            $table->unique(['member_id', 'date']); // Ensuring unique check-in/check-out per day
         });
     }
 
@@ -24,3 +28,4 @@ class CreateAttendanceTable extends Migration
         Schema::dropIfExists('attendance');
     }
 }
+

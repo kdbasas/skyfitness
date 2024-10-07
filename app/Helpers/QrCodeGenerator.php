@@ -20,7 +20,14 @@ class QrCodeGenerator
 
         $writer = new \Endroid\QrCode\Writer\PngWriter();
         $result = $writer->write($qrCode);
-        $qrCodePath = storage_path('app/public/img/qrcode/' . $filename);
-        $result->saveToFile($qrCodePath);
+
+        // Create the directory if it does not exist
+        $qrCodePath = storage_path('app/public/img/qrcode');
+        if (!is_dir($qrCodePath)) {
+            mkdir($qrCodePath, 0777, true);
+        }
+
+        // Save the QR code image
+        $result->saveToFile($qrCodePath . '/' . $filename);
     }
 }

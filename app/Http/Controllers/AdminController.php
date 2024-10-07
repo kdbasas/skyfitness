@@ -437,7 +437,7 @@ public function deleteEquipment(Request $request, $id)
     // Show Member Management
     public function showMembers()
     {
-        $members = Member::all();
+        $members = Member::paginate(10);
         $subscriptions = Subscription::all();
         return view('admin.member_management', compact('members', 'subscriptions'));
     }
@@ -457,30 +457,34 @@ public function deleteEquipment(Request $request, $id)
         'subscription_id' => 'required|exists:subscriptions,subscription_id',
     ]);
 
-    // Ensure 'suffix_name' has a value
+
     if (!isset($validated['suffix_name'])) {
         $validated['suffix_name'] = '';
     }
 
-    // Fetch the subscription amount based on the selected subscription_id
+
     $subscription = Subscription::find($validated['subscription_id']);
-    $validated['amount'] = $subscription ? $subscription->amount : 0; // Default to 0 if subscription not found
+    $validated['amount'] = $subscription ? $subscription->amount : 0; 
     if ($subscription) {
-        // Calculate the date_expired based on the validity period of the subscription
-        $validityPeriodInMonths = $subscription->validity; // validity in months
+        
+        $validityPeriodInMonths = $subscription->validity; 
         $validated['date_expired'] = Carbon::parse($validated['date_joined'])->addMonths($validityPeriodInMonths)->format('Y-m-d');
     }
 
-    // Store the validated data
+
     $member = Member::create($validated);
 
-    // Generate QR code
+ 
     $qrCodeGenerator = new QrCodeGenerator();
     $qrCodeData = 'Member ID: ' . $member->member_id . ' - Name: ' . $member->first_name . ' ' . $member->last_name;
-    $qrCodeGenerator->generate($qrCodeData, 'member_' . $member->member_id . '.png');
-
-    return redirect()->back()->with('success', 'Member registered successfully!');
-}
+    $qrCodeFilename = 'member_' . $member->member_id . '.png';
+    $qrCodeGenerator->generate($qrCodeData, $qrCodeFilename);
+ 
+  
+    $member->update(['qr_code' => $qrCodeFilename]);
+ 
+     return redirect()->back()->with('success', 'Member registered successfully!');
+ }
 public function updateMember(Request $request)
 {
     $request->validate([
@@ -533,19 +537,26 @@ public function deleteMember($id)
     }
     
     // Handle Attendance
-    public function showAttendance()
+    public function showAttendance(Request $request)
     {
-        $attendances = Attendance::all();
-        $attendanceRecords = $attendances->map(function ($attendance) {
+        $sortByDate = $request->input('sort-by-date', 'desc');
+
+    $attendanceRecords = Attendance::with('member')
+        ->orderByRaw('MONTH(date)')
+        ->orderByRaw('DAY(date)')
+        ->orderByRaw('YEAR(date)')
+        ->get();
+        $formattedRecords = $attendanceRecords->map(function ($attendance) {
             return [
-                'date' => $attendance->date,
-                'time' => $attendance->check_in_time . ' - ' . $attendance->check_out_time,
                 'member_name' => $attendance->member->first_name . ' ' . $attendance->member->last_name,
-                'check_in_out' => $attendance->check_in_time ? 'Check-in' : 'Check-out',
+                'date' => $attendance->date,
+                'check_in_time' => $attendance->check_in_time,
+                'check_out_time' => $attendance->check_out_time,
             ];
         });
     
-        return view('admin.attendance', compact('attendanceRecords'));
+        // Return the view with formatted records
+        return view('admin.attendance', ['attendanceRecords' => $formattedRecords]);
     }
     public function handleAttendance(Request $request)
 {

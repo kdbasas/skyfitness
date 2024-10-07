@@ -13,7 +13,7 @@ class CreateMembersTable extends Migration
             $table->string('first_name');
             $table->string('middle_name')->nullable();
             $table->string('last_name');
-            $table->string('suffix_name', 55)->default('');
+            $table->string('suffix_name', 55)->nullable()->default('');
             $table->string('email')->unique();
             $table->string('contact_number');
             $table->unsignedBigInteger('subscription_id');
