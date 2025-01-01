@@ -1,17 +1,20 @@
-<div class="container">
-    <div class="row">
-        <div class="col-md-12">
-            <h2>Receipt</h2>
-            <p>Member Name: {{ $member->first_name }} {{ $member->last_name }}</p>
-            <p>Subscription: {{ $member->subscription->subscription_name }}</p>
-            <p>Date: {{ $receipt->date }}</p>
-            <p>Amount: ₱{{ number_format($receipt->amount, 2) }}</p>
-        </div>
-    </div>
-</div>
+@extends('layouts.admin')
 
-<script>
-    window.onload = function() {
-        window.print();
-    }
-</script>
+@section('content')
+    <div class="receipt-container">
+        <h2>Receipt for {{ $member->first_name }} {{ $member->last_name }}</h2>
+        <a href="{{ asset('storage/' . $pdfFilename) }}" id="receipt-link" target="_blank">Download Receipt</a>
+    </div>
+
+    <script>
+        window.onload = function() {
+            const receiptLink = document.getElementById('receipt-link');
+            if (receiptLink) {
+                const printWindow = window.open(receiptLink.href, '_blank');
+                printWindow.onload = function() {
+                    printWindow.print();
+                };
+            }
+        };
+    </script>
+@endsection

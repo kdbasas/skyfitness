@@ -13,6 +13,8 @@ use App\Models\Equipment;
 use App\Models\Member;
 use App\Models\Attendance;
 use Carbon\Carbon;
+use Rawilk\Printing\Receipts\ReceiptPrinter;
+use Rawilk\Printing\Printing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -522,8 +524,43 @@ public function deleteEquipment(Request $request, $id)
         $qrCodeGenerator->generate($qrCodeData, $qrCodeFilename);
 
         $member->update(['qr_code' => $qrCodeFilename]);
+         // Generate the receipt
+         $receipt = Receipt::create([
+            'member_id' => $member->member_id,
+            'date' => Carbon::now(),
+            'amount' => $member->amount,
+        ]);
 
-        return view('admin.receipt', compact('member', 'receipt'))->with('success', 'Member registered successfully!');
+        // Generate the receipt text
+        //$receiptPrinter = new ReceiptPrinter;
+        //$receiptText = (string) $receiptPrinter
+            //->centerAlign()
+            //->text('ROXAS SKY FITNESS GYM')
+           // ->leftAlign()
+           // ->line()
+           // ->text("Member Name: {$member->first_name} {$member->last_name}")
+           // ->text("Subscription: {$member->subscription->subscription_name}")
+           // ->text("Date: {$receipt->date->format('Y-m-d')}")
+           // ->text("Amount: ₱" . number_format($receipt->amount, 2))
+           // ->feed(2)
+           // ->cut();
+    
+
+        // Send the receipt to the printer
+        //$printerId = 'your_printer_id'; // Replace with your actual printer ID
+       // $printJob = Printing::newPrintTask()
+            //->printer($printerId)
+           // ->content($receiptText)
+            //->send();
+
+        // Generate the receipt PDF
+        $pdfFilename = 'receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf';
+        $pdfPath = storage_path('app/public/' . $pdfFilename);
+        PDF::loadView('admin.receipt_pdf', compact('member', 'receipt'))->save($pdfPath);
+        $member->update(['receipt_path' => $pdfFilename]);
+        // Return view with auto-print JS
+        return view('admin.receipt', compact('member', 'receipt', 'pdfFilename'))
+            ->with('success', 'Member registered successfully!');
     } catch (\Exception $e) {
         \Log::error('Error adding member: ' . $e->getMessage());
         return redirect()->back()->with('error', 'There was an issue adding the member.');
@@ -735,4 +772,15 @@ public function downloadReport(Request $request)
     // Download the PDF file
     return $pdf->download('report_analytics_' . $selectedMonth . '.pdf');
     }
+    public function printReceipt($member_id)
+{
+    $member = Member::find($member_id);
+
+    if ($member) {
+        $pdf = Pdf::loadView('admin.receipt_pdf', compact('member'));
+        return $pdf->download("receipt_{$member->first_name}_{$member->last_name}.pdf");
+    }
+
+    return redirect()->back()->with('error', 'Member not found.');
+}
 }

@@ -124,6 +124,7 @@
                 <th class="px-4 py-2 text-left">Type</th>
                 <th class="px-4 py-2 text-left">Total Price</th>
                 <th class="px-4 py-2 text-left">Actions</th>
+                <th class="px-4 py-2 text-left">Print Receipt</th>
             </tr>
         </thead>
         <tbody>
@@ -158,6 +159,11 @@
                             Delete
                         </button>
                     </td>
+                    <td class="px-4 py-2 border-b">
+                        <a href="{{ route('admin.print.receipt', $member->member_id) }}" class="btn btn-primary">
+                            <i class="fas fa-print"></i> Print Receipt
+                        </a>
+                    </td>               
                 </tr>
             @empty
                 <tr>

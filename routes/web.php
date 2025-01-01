@@ -61,6 +61,7 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::post('/notifications/mark-all-as-read', [AdminController::class, 'markAllNotificationsAsRead'])
     ->name('notifications.markAllAsRead');
     Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount']);
+    Route::get('print-receipt/{member_id}', [AdminController::class, 'printReceipt'])->name('admin.print.receipt');
 
 });
 
