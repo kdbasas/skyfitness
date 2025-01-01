@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Member;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade as PDF;
 use Illuminate\Support\Facades\Validator;
 class AttendanceController extends Controller
 {
@@ -43,9 +44,10 @@ class AttendanceController extends Controller
     
             if ($attendance) {
                 if ($attendance->check_in_time) {
+                    $checkInTime = Carbon::parse($attendance->check_in_time)->setTimezone('Asia/Hong_Kong')->format('H:i:s');
                     return response()->json(['message' => 'Already checked in', 'attendanceStatus' => 'checkedIn', 'memberId' => $member->member_id]);
                 } else {
-                    $attendance->check_in_time = Carbon::now()->format('H:i:s');
+                    $attendance->check_in_time = Carbon::now()->setTimezone('Asia/Hong_Kong')->format('H:i:s');
                     $attendance->save();
                     return response()->json(['message' => 'Check-in successful', 'attendanceStatus' => 'checkedIn', 'memberId' => $member->member_id]);
                 }
@@ -53,7 +55,7 @@ class AttendanceController extends Controller
                 $attendance = new Attendance();
                 $attendance->member_id = $member->member_id;
                 $attendance->date = Carbon::today()->format('Y-m-d');
-                $attendance->check_in_time = Carbon::now()->format('H:i:s');
+                $attendance->check_in_time = Carbon::now()->setTimezone('Asia/Hong_Kong')->format('H:i:s');
                 $attendance->save();
             
                 return response()->json(['message' => 'Attendance recorded successfully', 'attendanceStatus' => 'checkedIn', 'memberId' => $member->member_id]);
@@ -73,7 +75,7 @@ class AttendanceController extends Controller
         $attendance = new Attendance();
         $attendance->member_id = $memberId;
         $attendance->date = Carbon::today()->format('Y-m-d');
-        $attendance->check_in_time = Carbon::now()->format('H:i:s');
+        $attendance->check_in_time = Carbon::now()->setTimezone('Asia/Hong_Kong')->format('H:i:s');
         $attendance->save();
 
         return response()->json(['message' => 'Attendance recorded successfully', 'attendanceStatus' => 'checkedIn']);
@@ -85,7 +87,7 @@ class AttendanceController extends Controller
     }
 
     // If not checked in, update the check-in time
-    $attendance->check_in_time = Carbon::now()->format('H:i:s');
+    $attendance->check_in_time = Carbon::now()->setTimezone('Asia/Hong_Kong')->format('H:i:s');
     $attendance->save();
 
     return response()->json(['message' => 'Check-in successful', 'attendanceStatus' => 'checkedIn']);
@@ -117,7 +119,7 @@ public function checkOut(Request $request)
     }
 
     // Update check-out time
-    $attendance->check_out_time = Carbon::now()->format('H:i:s');
+    $attendance->check_out_time = Carbon::now()->setTimezone('Asia/Hong_Kong')->format('H:i:s');
     $attendance->save();
 
     return response()->json(['message' => 'Check-out successful', 'attendanceStatus' => 'checkedOut']);

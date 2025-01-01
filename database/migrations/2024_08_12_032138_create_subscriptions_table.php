@@ -12,7 +12,6 @@ class CreateSubscriptionsTable extends Migration
             $table->id('subscription_id');
             $table->string('subscription_name'); 
             $table->integer('validity'); 
-            $table->decimal('amount', 8, 2);
             $table->timestamps();
         });
     }

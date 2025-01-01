@@ -30,24 +30,22 @@
             </div>
 
             <!-- Active Members -->
-            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Active Members</h2>
-                <ul>
-                    <li class="flex justify-between py-2 border-b border-gray-200">John Doe <span class="font-semibold text-green-500">Active</span></li>
-                    <li class="flex justify-between py-2 border-b border-gray-200">Jane Smith <span class="font-semibold text-green-500">Active</span></li>
-                </ul>
-            </div>
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
+    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Active Members</h2>
+    <ul>
+        @foreach($activeMembers as $member)
+            <li class="flex justify-between py-2 border-b border-gray-200">{{ $member->first_name }} {{ $member->last_name }} <span class="font-semibold text-green-500">Active</span></li>
+        @endforeach
+    </ul>
+</div>
 
-            <!-- Inventory Overview -->
-            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Inventory Overview</h2>
-                <div>
-                    <p class="text-gray-600">Total Equipment: <span class="font-bold">0</span></p>
-                    <p class="text-gray-600">Equipment in Use: <span class="font-bold">0</span></p>
-                    <p class="text-gray-600">Equipment Available: <span class="font-bold">0</span></p>
-                </div>
-            </div>
-        </div>
+<!-- Inventory Overview -->
+<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
+    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Inventory Overview</h2>
+    <div>
+        <p class="text-gray-600">Total Equipment: <span class="font-bold">{{ $totalEquipment }}</span></p>
+        <p class="text-gray-600">Equipment Unavailable: <span class="font-bold">{{ $equipmentInUse }}</span></p>
+        <p class="text-gray-600">Equipment Available: <span class="font-bold">{{ $equipmentAvailable }}</span></p>
     </div>
 </div>
 

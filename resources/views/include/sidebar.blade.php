@@ -4,7 +4,7 @@
         @php
             $admin = Auth::user();
             $profileImagePath = $admin && $admin->profile_image 
-                ? asset('storage/img/' . $admin->profile_image) 
+                ? asset('storage/img/admin/' . $admin->profile_image) 
                 : asset('images/default-profile.png');
         @endphp
         <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500">

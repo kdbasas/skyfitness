@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Member;         // Importing the Member model
+use App\Models\Member;        
 use App\Models\Subscription;
 use Endroid\QrCode\QrCode;
 class MemberSeeder extends Seeder
@@ -17,7 +17,7 @@ class MemberSeeder extends Seeder
     public function run()
     {
         $this->call(SubscriptionSeeder::class);
-        Member::factory()->count(50)->create();
+        Member::factory()->count(20)->create();
         
     }
 }

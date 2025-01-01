@@ -12,13 +12,25 @@ use App\Models\Subscription;
 class SubscriptionFactory extends Factory
 {
     protected $model = Subscription::class;
+    protected $month = 1;
 
     public function definition(): array
     {
+        $subscriptionName = $this->generateSubscriptionName();
+        $this->month++;
+
         return [
-            'subscription_name' => $this->faker->word(),
-            'validity' => $this->faker->numberBetween(1, 12), // Duration in months
-            'amount' => $this->faker->randomFloat(2, 10, 100), // Random amount between 10 and 100
+            'subscription_name' => $subscriptionName,
+            'validity' => $this->month - 1,
+            'amount' => 800 + (($this->month - 1) * 800),
         ];
+    }
+
+    protected function generateSubscriptionName()
+    {
+        if ($this->month > 12) {
+            $this->month = 1;
+        }
+        return $this->month . ' months';
     }
 }

@@ -15,15 +15,15 @@
             <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Attendance Records</h2>
 
             <div class="flex justify-end mb-4">
-                <form>
-                    <label for="sort-by-date">Sort by Date:</label>
-                    <select id="sort-by-date" name="sort-by-date" onchange="this.form.submit()">
-                        <option value="asc" {{ request()->input('sort-by-date') == 'asc' ? 'selected' : '' }}>Ascending</option>
-                        <option value="desc" {{ request()->input('sort-by-date') == 'desc' ? 'selected' : '' }}>Descending</option>
-                    </select>
+                <form method="GET" action="{{ route('admin.attendance') }}">
+                    <label for="date">Select Date:</label>
+                    <input type="date" id="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()">
                 </form>
+                <a href="{{ route('attendance.pdf', ['date' => $selectedDate]) }}"
+                   class="ml-4 bg-[#1A1363] text-white px-4 py-2 rounded-lg hover:bg-[#333] transition duration-300 ease-in-out">
+                    Print Report
+                </a>
             </div>
-
             <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-[#1A1363] text-white">

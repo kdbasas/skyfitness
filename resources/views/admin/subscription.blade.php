@@ -14,35 +14,28 @@
         </div>
 
         <!-- Subscription Form -->
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
-            <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Add Subscription</h2>
-            <form action="{{ route('admin.subscription.add') }}" method="POST" class="space-y-4">
-                @csrf
-                <!-- Subscription Name -->
-                <div class="flex flex-col">
-                    <label for="subscription_name" class="text-sm font-medium text-black">Subscription Name</label>
-                    <input type="text" id="subscription_name" name="subscription_name" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                </div>
-                
-                <!-- Validity -->
-                <div class="flex flex-col">
-                    <label for="validity" class="text-sm font-medium text-black">Validity (months)</label>
-                    <input type="number" id="validity" name="validity" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                </div>
-                
-                <!-- Amount -->
-                <div class="flex flex-col">
-                    <label for="amount" class="text-sm font-medium text-black">Amount</label>
-                    <input type="number" id="amount" name="amount" step="0.01" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                </div>
+    <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
+        <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Add Subscription</h2>
+        <form action="{{ route('admin.subscription.add') }}" method="POST" class="space-y-4">
+            @csrf
+            <!-- Subscription Name -->
+            <div class="flex flex-col">
+                <label for="subscription_name" class="text-sm font-medium text-black">Subscription Name</label>
+                <input type="text" id="subscription_name" name="subscription_name" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+            </div>
+            
+            <!-- Validity -->
+            <div class="flex flex-col">
+                <label for="validity" class="text-sm font-medium text-black">Validity (months)</label>
+                <input type="number" id="validity" name="validity" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+            </div>
 
-                <div class="flex space-x-4 mt-4">
-                    <button type="submit" class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#1A1363]">Save</button>
-                    <button type="reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-600">Cancel</button>
-                </div>
-            </form>
-        </div>
-
+            <div class="flex space-x-4 mt-4">
+                <button type="submit" class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#1A1363]">Save</button>
+                <button type="reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-600">Cancel</button>
+            </div>
+        </form>
+    </div>
         <!-- Subscription List -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Subscription List</h2>

@@ -36,7 +36,7 @@
             <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Registration</h2>
 
             <!-- Registration Form -->
-            <form action="{{ route('admin.member.add') }}" method="POST" class="space-y-4">
+            <form action="{{ route('admin.member.add') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
                 @csrf
                 <!-- Form Fields -->
                 <div class="flex flex-col">
@@ -69,29 +69,44 @@
                 </div>
 
                 <div class="flex flex-col">
-                    <label for="subscription" class="text-sm font-medium text-black">Subscription</label>
-                    <select id="subscription" name="subscription_id" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                        <option value="" disabled selected>Select Subscription</option>
+                    <label for="age" class="text-sm font-medium text-black">Age</label>
+                    <input type="number" id="age" name="age" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+                </div>
+
+                <div class="flex flex-col">
+                    <label for="promo" class="text-sm font-medium text-black">Promo</label>
+                    <select id="promo" name="promo" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+                        <option value="" disabled selected>Select Promo</option>
+                        <option value="Student">Student (₱450)</option>
+                        <option value="Regular">Regular (₱500)</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col">
+                    <label for="id_attachment" class="text-sm font-medium text-black">ID Attachment</label>
+                    <input type="file" id="id_attachment" name="id_attachment" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
+                </div>
+                
+                <div class="flex flex-col">
+                    <label for="subscription_id" class="text-sm font-medium text-black">Subscription</label>
+                    <select id="subscription_id" name="subscription_id" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
                         @foreach($subscriptions as $subscription)
-                            <option value="{{ $subscription->subscription_id }}">{{ $subscription->subscription_name }}</option>
+                            <option value="{{ $subscription->subscription_id }}">{{ $subscription->subscription_name }} ({{ $subscription->validity }} months)</option>
                         @endforeach
                     </select>
-                </div>                
-
+                </div>
+                
                 <div class="flex flex-col">
                     <label for="date_joined" class="text-sm font-medium text-black">Date Joined</label>
                     <input type="date" id="date_joined" name="date_joined" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                </div>
-
-                <!-- Form Buttons -->
-                <div class="flex space-x-4 mt-4">
-                    <button type="submit" class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#0f0c5c]">Register</button>
-                    <button type="reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500">Cancel</button>
-                </div>
+        </div>
+        
+        <button type="submit" class="bg-[#1A1363] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#1A1363] hover:text-white transition duration-300 ease-in-out">Pay</button>
+                <button type="reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500">Cancel</button>
             </form>
         </div>
 
-        <!-- Member List Section -->
+ <!-- Member List Section -->
 <div class="bg-white p-6 rounded-lg shadow-lg">
     <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Member's List</h2>
 
@@ -105,6 +120,9 @@
                 <th class="px-4 py-2 text-left">Date Joined</th>
                 <th class="px-4 py-2 text-left">Date Expired</th>
                 <th class="px-4 py-2 text-left">QR Code</th>
+                <th class="px-4 py-2 text-left">ID Attachment</th>
+                <th class="px-4 py-2 text-left">Type</th>
+                <th class="px-4 py-2 text-left">Total Price</th>
                 <th class="px-4 py-2 text-left">Actions</th>
             </tr>
         </thead>
@@ -120,6 +138,12 @@
                     <td class="px-4 py-2 border-b text-center">
                         <img src="{{ asset('storage/img/qrcode/member_' . $member->member_id . '.png') }}" alt="QR Code" class="w-24 h-24 mx-auto">
                         <a href="{{ asset('storage/img/qrcode/member_' . $member->member_id . '.png') }}" download="member_{{ $member->member_id }}.png" class="bg-gray-300 text-black px-2 py-1 rounded mt-1 inline-block">Download QR</a>
+                    </td>
+                    <td class="px-4 py-2 border-b text-center">
+                        <img src="{{ asset('storage/img/id_attachments/' . $member->id_attachment) }}" alt="ID Attachment" class="w-24 h-24 mx-auto">
+                    </td>
+                    <td class="px-4 py-2 border-b">{{ $member->promo == 'Student' ? 'Student' : 'Regular' }}</td>
+                    <td class="px-4 py-2 border-b">₱{{ number_format($member->amount, 2) }}</td>
                     <td class="px-4 py-2 border-b flex items-center space-x-2">
                         <button 
                             onclick="openEditPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->subscription_id }}', '{{ $member->contact_number }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
@@ -133,23 +157,16 @@
                         >
                             Delete
                         </button>
-                        <!-- New Renew Button -->
-                        <button 
-                            onclick="openRenewPopup({{ $member->member_id }}, '{{ $member->first_name }}', '{{ $member->last_name }}', '{{ $member->date_joined->format('Y-m-d') }}', '{{ $member->date_expired ? $member->date_expired->format('Y-m-d') : '' }}')" 
-                            class="px-4 py-2 ml-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600"
-                        >
-                            Renew
-                        </button>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="8" class="px-4 py-2 text-center border-b">No members found.</td>
+                    <td colspan="10" class="px-4 py-2 text-center border-b">No members found.</td>
                 </tr>
             @endforelse
         </tbody>
     </table>
-    {{ $members->links('pagination::simple-default') }}
+    {{ $members->links('pagination::tailwind') }}
 </div>
 
        <!-- Edit Member Pop-Up -->
@@ -214,106 +231,72 @@
         </form>
     </div>
 </div>
-<!-- Renew Member Pop-Up -->
-<div id="renew-popup" class="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 hidden">
-    <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-        <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Renew Member</h2>
-        <p class="text-lg mb-4">Are you sure you want to renew <span id="renew_member_name"></span>'s subscription?</p>
-        <form id="renew-form" action="#" method="POST">
-            @csrf
-            @method('PUT')
-
-            <!-- Select New Subscription -->
-            <div class="flex flex-col mb-4">
-                <label for="renew_subscription" class="text-sm font-medium text-black">Select Subscription</label>
-                <select id="renew_subscription" name="subscription_id" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
-                    @foreach($subscriptions as $subscription)
-                        <option value="{{ $subscription->subscription_id }}" data-validity="{{ $subscription->validity }}">{{ $subscription->subscription_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Hidden Inputs for Date Joined and Date Expired -->
-            <input type="hidden" id="renew_date_joined" name="date_joined">
-            <input type="hidden" id="renew_date_expired" name="date_expired">
-
-            <div class="flex space-x-4 mt-4">
-                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700">Renew</button>
-                <button type="button" onclick="closeRenewPopup()" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 
 <script>
     function openEditPopup(id, firstName, lastName, subscriptionId, contactNumber, dateJoined) {
-    document.getElementById('edit_member_id').value = id;
-    document.getElementById('edit_first_name').value = firstName;
-    document.getElementById('edit_last_name').value = lastName;
-    document.getElementById('edit_subscription').value = subscriptionId;
-    document.getElementById('edit_contact_number').value = contactNumber;
-    document.getElementById('edit_date_joined').value = dateJoined;
+        document.getElementById('edit_member_id').value = id;
+        document.getElementById('edit_first_name').value = firstName;
+        document.getElementById('edit_last_name').value = lastName;
+        document.getElementById('edit_subscription').value = subscriptionId;
+        document.getElementById('edit_contact_number').value = contactNumber;
+        document.getElementById('edit_date_joined').value = dateJoined;
 
-    let formattedDateJoined = new Date(dateJoined).toISOString().split('T')[0];
-    document.getElementById('edit_date_joined').value = formattedDateJoined;
+        let formattedDateJoined = new Date(dateJoined).toISOString().split('T')[0];
+        document.getElementById('edit_date_joined').value = formattedDateJoined;
 
-    // Set the form action dynamically based on member ID
-    document.getElementById('edit-form').action = `{{ route('admin.member.update', ':id') }}`.replace(':id', id);
+        // Set the form action dynamically based on member ID
+        document.getElementById('edit-form').action = `{{ route('admin.member.update', ':id') }}`.replace(':id', id);
 
-    document.getElementById('edit-popup').classList.remove('hidden');
-}
+        document.getElementById('edit-popup').classList.remove('hidden');
+    }
 
-function closeEditPopup() {
-    document.getElementById('edit-popup').classList.add('hidden');
-}
+    function closeEditPopup() {
+        document.getElementById('edit-popup').classList.add('hidden');
+    }
 
-function openDeletePopup(id, fullName) {
-    document.getElementById('delete_member_name').textContent = fullName;
-    document.getElementById('delete-form').action = `{{ route('admin.member.delete', ':id') }}`.replace(':id', id);
-    document.getElementById('delete-popup').classList.remove('hidden');
-}
+    function openDeletePopup(id, fullName) {
+        document.getElementById('delete_member_name').textContent = fullName;
+        document.getElementById('delete-form').action = `{{ route('admin.member.delete', ':id') }}`.replace(':id', id);
+        document.getElementById('delete-popup').classList.remove('hidden');
+    }
 
-function closeDeletePopup() {
-    document.getElementById('delete-popup').classList.add('hidden');
-}
-function openRenewPopup(id, firstName, lastName, currentDateJoined, currentDateExpired) {
-    document.getElementById('renew_member_name').textContent = `${firstName} ${lastName}`;
+    function closeDeletePopup() {
+        document.getElementById('delete-popup').classList.add('hidden');
+    }
+    document.getElementById('subscription_id').addEventListener('change', function() {
+    var subscriptionId = this.value;
+    var promo = document.getElementById('promo').value;
 
-    // Set the form action dynamically based on member ID
-    document.getElementById('renew-form').action = `{{ route('admin.member.renew', ':id') }}`.replace(':id', id);
+    $.ajax({
+        type: 'GET',
+        url: '/calculate-amount',
+        data: {subscription_id: subscriptionId, promo: promo},
+        success: function(response) {
+            document.getElementById('amount').value = '₱' + response.amount;
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);
+        }
+    });
+});
 
-    // Set the date_joined to the existing date_expired when renewing
-    const existingDateExpired = new Date(currentDateExpired);
-    const newDateJoined = existingDateExpired.toISOString().split('T')[0]; // Set Date Joined to the existing Date Expired
-    document.getElementById('renew_date_joined').value = newDateJoined;
+document.getElementById('promo').addEventListener('change', function() {
+    var promo = this.value;
+    var subscriptionId = document.getElementById('subscription_id').value;
 
-    // Clear previous date_expired value
-    document.getElementById('renew_date_expired').value = '';
-
-    // Clear previous event listeners to avoid stacking
-    const subscriptionSelect = document.getElementById('renew_subscription');
-    subscriptionSelect.removeEventListener('change', updateExpirationDate);
-    
-    // Add event listener for subscription change
-    subscriptionSelect.addEventListener('change', updateExpirationDate);
-
-    // Trigger update for the initial subscription selection (if any)
-    updateExpirationDate.call(subscriptionSelect);
-
-    document.getElementById('renew-popup').classList.remove('hidden');
-}
-
-function updateExpirationDate() {
-    const validity = this.options[this.selectedIndex].getAttribute('data-validity'); // Get the validity period
-    const currentDateJoined = new Date(document.getElementById('renew_date_joined').value); // Get the new Date Joined
-    const newDateExpired = new Date(currentDateJoined.setMonth(currentDateJoined.getMonth() + parseInt(validity))); // Calculate new expiration date
-    document.getElementById('renew_date_expired').value = newDateExpired.toISOString().split('T')[0]; // Format for input
-}
-
-function closeRenewPopup() {
-    document.getElementById('renew-popup').classList.add('hidden');
-}
-
+    $.ajax({
+        type: 'GET',
+        url: '/calculate-amount',
+        data: {subscription_id: subscriptionId, promo: promo},
+        success: function(response) {
+            document.getElementById('amount').value = '₱' + response.amount;
+        },
+        error: function(xhr, status, error) {
+            console.log(xhr.responseText);
+        }
+    });
+});
 </script>
+</div>
+</div>
 @endsection

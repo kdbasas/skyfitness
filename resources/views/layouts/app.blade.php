@@ -34,8 +34,10 @@
             transition: opacity 0.3s ease, transform 0.3s ease;
             transform: translateY(-20px);
             opacity: 0;
+            pointer-events: none;
         }
         .notification-dropdown.show {
+            pointer-events: auto;
             transform: translateY(0);
             opacity: 1;
         }
@@ -109,7 +111,7 @@
 
     <!-- Header and Notification Bell -->
     <header>
-        @unless(request()->routeIs('login'))
+        @unless(request()->routeIs('login') || request()->routeIs('attendance'))
             <div class="notification-bell">
                 <i class="fas fa-bell"></i>
                 <span class="notification-count">{{ count($notifications ?? []) }}</span>
@@ -140,56 +142,111 @@
 
     <!-- Notification Bell JS -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
     const notificationBell = document.querySelector('.notification-bell');
     const notificationDropdown = document.querySelector('.notification-dropdown');
-    const notificationItems = document.querySelectorAll('.notification-item');
     const notificationCountElem = document.querySelector('.notification-count');
+    const notificationItems = document.querySelectorAll('.notification-item');
 
     if (notificationBell) {
-        notificationBell.addEventListener('click', function() {
-            notificationDropdown.classList.toggle('show');
-        });
+        notificationBell.addEventListener('click', function (event) {
+  if (event.target === notificationBell || event.target.tagName === 'I') {
+    event.stopPropagation(); // Prevent the click event from propagating to the document
+    notificationDropdown.classList.toggle('show');
+    if (notificationDropdown.classList.contains('show')) {
+      const lastNotification = notificationItems[notificationItems.length - 1];
+      const dropdownHeight = notificationDropdown.offsetHeight;
+      const lastNotificationOffset = lastNotification.offsetTop;
+      notificationDropdown.scrollTop = lastNotificationOffset - dropdownHeight + 20; // Add 20px to account for padding
+      markAllNotificationsAsRead();
+    }
+  }
+});
 
-        notificationItems.forEach(item => {
-            item.addEventListener('click', function() {
-                const notificationId = this.getAttribute('data-id');
-                
-                if (notificationId) {
-                    fetch(`/notifications/mark-as-read/${notificationId}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify({ read: true })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            this.classList.remove('alert-danger');
-                            this.classList.add('alert-info');
-                            this.style.opacity = '0.5'; // Optionally, you can fade out or style it differently
-
-                            // Update notification count
-                            updateNotificationCount();
-                        }
-                    });
-                }
-            });
+        // Close the dropdown when clicking outside
+        document.addEventListener('click', function (event) {
+            if (
+                !notificationBell.contains(event.target) &&
+                !notificationDropdown.contains(event.target)
+            ) {
+                notificationDropdown.classList.remove('show');
+            }
         });
     }
-    
-    function updateNotificationCount() {
+
+    // Add event listener to pagination links
+    document.querySelectorAll('.pagination a').forEach(function (link) {
+        link.addEventListener('click', function (event) {
+            event.preventDefault(); // Prevent the default link behavior
+
+            // Close the notification dropdown if it's open
+            if (notificationDropdown.classList.contains('show')) {
+                notificationDropdown.classList.remove('show');
+            }
+
+            // Do not mark notifications as read when clicking on pagination links
+            // markAllNotificationsAsRead();
+
+            const pageUrl = link.getAttribute('href'); // Get the URL for the page to load
+
+            // Load new page content using AJAX
+            fetch(pageUrl)
+                .then(response => response.text())
+                .then(data => {
+                    // Update the main content with the new page data
+                    document.querySelector('.flex-1').innerHTML = data;
+
+                    // Fetch the unread notification count for the new page
+                    fetchUnreadNotificationCount();
+                });
+        });
+    });
+
+    function markAllNotificationsAsRead() {
+        fetch('/notifications/mark-all-as-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                notificationItems.forEach(item => {
+                    item.classList.remove('alert-danger');
+                    item.classList.add('alert-info');
+                    item.style.opacity = '0.5';
+                });
+
+                // Clear the notification count
+                updateNotificationCount(data.count);
+            }
+        });
+    }
+
+    function updateNotificationCount(count) {
+        if (count === 0) {
+            notificationCountElem.style.display = 'none';
+        } else {
+            notificationCountElem.textContent = count;
+            notificationCountElem.style.display = 'flex';
+        }
+    }
+
+    function fetchUnreadNotificationCount() {
         fetch('/notifications/unread-count')
             .then(response => response.json())
             .then(data => {
-                notificationCountElem.textContent = data.count;
+                updateNotificationCount(data.count);
             });
     }
-});
 
+    // Fetch the unread notification count on page load
+    fetchUnreadNotificationCount();
+});
     </script>
+    
     @stack('scripts')
 </body>
 </html>

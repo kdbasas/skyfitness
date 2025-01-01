@@ -7,12 +7,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Subscription;
+use App\Models\Receipt;
 use App\Models\Payment;
 use App\Models\Equipment;
 use App\Models\Member;
 use App\Models\Attendance;
 use Carbon\Carbon;
-use Barryvdh\DomPDF\Facade as PDF;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
@@ -38,16 +39,33 @@ class AdminController extends Controller
         }
 
         // Subscription Expiry Notification (5 days before expiry)
-        $expiringMembers = Member::whereDate('date_expired', '<=', Carbon::now()->addDays(5))->get();
+    $expiringMembers = Member::whereDate('date_expired', '<=', Carbon::now()->addDays(5))->get();
     foreach ($expiringMembers as $member) {
         $notifications[] = [
             'message' => "Subscription for {$member->first_name} {$member->last_name} is expiring in 5 days!",
             'type' => 'warning',
         ];
     }
-
-        return view('admin.dashboard', compact('notifications'));
+    $expiredMembers = Member::whereDate('date_expired', '<=', Carbon::now())->get();
+    foreach ($expiredMembers as $member) {
+        $member->status = 'inactive';
+        $member->save();
     }
+
+    // Fetch active members
+    $activeMembers = Member::where('status', 'active')->get();
+
+    // Fetch total equipment
+    $totalEquipment = Equipment::count();
+
+    // Fetch equipment in use
+    $equipmentInUse = Equipment::where('status', 'inactive')->count();
+
+    // Fetch equipment available
+    $equipmentAvailable = Equipment::where('status', 'active')->count();
+
+    return view('admin.dashboard', compact('notifications', 'activeMembers', 'totalEquipment', 'equipmentInUse', 'equipmentAvailable'));
+}
     public function showReports(Request $request)
 {
     $selectedMonth = $request->input('month', Carbon::now()->format('Y-m')); // Default to current month
@@ -103,19 +121,31 @@ public function printReport(Request $request)
 }
 
 
-    public function markAsRead($id)
+public function markAllNotificationsAsRead()
 {
-    $notification = Auth::user()->notifications()->find($id);
-    if ($notification) {
-        $notification->update(['read' => true]);
-        return response()->json(['success' => true]);
-    }
-    return response()->json(['success' => false], 404);
-}
+    try {
+        $user = auth()->user();
 
+        // Mark all notifications as read
+        $user->unreadNotifications->markAsRead();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifications marked as read.',
+            'count' => $user->unreadNotifications()->count() // Return the updated unread count
+        ]);
+    } catch (\Exception $e) {
+        Log::error($e); // Log the exception
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to mark notifications as read.',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
 public function getUnreadCount()
 {
-    $count = Auth::user()->notifications()->where('read', false)->count();
+    $count = auth()->user()->unreadNotifications()->count();
     return response()->json(['count' => $count]);
 }
 
@@ -152,7 +182,7 @@ public function getUnreadCount()
         }
 
         if ($request->hasFile('profile_image')) {
-            $profileImage = $request->file('profile_image')->store('img', 'public');
+            $profileImage = $request->file('profile_image')->store('img/admin', 'public');
             $admin->profile_image = $profileImage;
         }
 
@@ -169,7 +199,7 @@ public function getUnreadCount()
 
     if ($request->hasFile('profile_image')) {
         $imageName = time() . '.' . $request->profile_image->extension();
-        $request->profile_image->storeAs('public/img', $imageName);
+        $request->profile_image->storeAs('public/img/admin', $imageName);
         
         $admin->profile_image = $imageName;
         $admin->save();
@@ -217,7 +247,6 @@ public function getUnreadCount()
         $request->validate([
             'subscription_name' => 'required|string|max:255',
             'validity' => 'required|integer|min:1',
-            'amount' => 'required|numeric|min:0',
         ]);
 
         try {
@@ -455,36 +484,69 @@ public function deleteEquipment(Request $request, $id)
         'email' => 'required|email|unique:members,email',
         'contact_number' => 'required|string|max:20',
         'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        'promo' => 'required|string',
+        'id_attachment' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+    ]);
+    try {
+        $subscription = Subscription::find($request->subscription_id);
+        $amount = 0;
+        if ($request->promo == 'Student') {
+            $amount = 450 * $subscription->validity;
+        } elseif ($request->promo == 'Regular') {
+            $amount = 500 * $subscription->validity;
+        }
+
+        if (!isset($validated['suffix_name'])) {
+            $validated['suffix_name'] = '';
+        }
+
+        $subscription = Subscription::find($validated['subscription_id']);
+        $validated['amount'] = $amount; // Use the calculated amount instead of the subscription amount
+
+        if ($subscription) {
+            $validityPeriodInMonths = $subscription->validity;
+            $validated['date_expired'] = Carbon::parse($validated['date_joined'])->addMonths($validityPeriodInMonths)->format('Y-m-d');
+        }
+
+        $member = Member::create($validated);
+            
+        // Store the id attachment
+        $idAttachment = $request->file('id_attachment');
+        $idAttachmentFilename = time() . '.' . $idAttachment->getClientOriginalExtension();
+        $idAttachment->storeAs('public/img/id_attachments', $idAttachmentFilename);
+        $member->update(['id_attachment' => $idAttachmentFilename]);
+
+        $qrCodeGenerator = new QrCodeGenerator();
+        $qrCodeData = 'Member ID: ' . $member->member_id . ' - Name: ' . $member->first_name . ' ' . $member->last_name;
+        $qrCodeFilename = 'member_' . $member->member_id . '.png';
+        $qrCodeGenerator->generate($qrCodeData, $qrCodeFilename);
+
+        $member->update(['qr_code' => $qrCodeFilename]);
+
+        return view('admin.receipt', compact('member', 'receipt'))->with('success', 'Member registered successfully!');
+    } catch (\Exception $e) {
+        \Log::error('Error adding member: ' . $e->getMessage());
+        return redirect()->back()->with('error', 'There was an issue adding the member.');
+    }
+}
+public function calculateAmount(Request $request)
+{
+    $request->validate([
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        'promo' => 'required|string',
     ]);
 
+    $subscription = Subscription::find($request->subscription_id);
+    $amount = 0;
 
-    if (!isset($validated['suffix_name'])) {
-        $validated['suffix_name'] = '';
+    if ($request->promo == 'Student') {
+        $amount = 450 * $subscription->validity;
+    } elseif ($request->promo == 'Regular') {
+        $amount = 500 * $subscription->validity;
     }
 
-
-    $subscription = Subscription::find($validated['subscription_id']);
-    $validated['amount'] = $subscription ? $subscription->amount : 0; 
-    if ($subscription) {
-        
-        $validityPeriodInMonths = $subscription->validity; 
-        $validated['date_expired'] = Carbon::parse($validated['date_joined'])->addMonths($validityPeriodInMonths)->format('Y-m-d');
-    }
-
-
-    $member = Member::create($validated);
-
- 
-    $qrCodeGenerator = new QrCodeGenerator();
-    $qrCodeData = 'Member ID: ' . $member->member_id . ' - Name: ' . $member->first_name . ' ' . $member->last_name;
-    $qrCodeFilename = 'member_' . $member->member_id . '.png';
-    $qrCodeGenerator->generate($qrCodeData, $qrCodeFilename);
- 
-  
-    $member->update(['qr_code' => $qrCodeFilename]);
- 
-     return redirect()->back()->with('success', 'Member registered successfully!');
- }
+    return response()->json(['amount' => $amount]);
+}
 public function updateMember(Request $request)
 {
     $request->validate([
@@ -516,6 +578,10 @@ public function updateMember(Request $request)
 public function deleteMember($id)
 {
     $member = Member::findOrFail($id);
+    $qrCodePath = 'public/img/qrcode/' . $member->qr_code;
+    if (Storage::exists($qrCodePath)) {
+        Storage::delete($qrCodePath); // Delete the QR code image from storage
+    }
     $member->delete();
 
     return redirect()->route('admin.member_management')->with('success', 'Member deleted successfully.');
@@ -539,12 +605,13 @@ public function deleteMember($id)
     // Handle Attendance
     public function showAttendance(Request $request)
     {
-        $sortByDate = $request->input('sort-by-date', 'desc');
+        $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+    $sortByDate = $request->input('sort-by-date', 'desc');
 
+    // Fetch attendance records filtered by the selected date
     $attendanceRecords = Attendance::with('member')
-        ->orderByRaw('MONTH(date)')
-        ->orderByRaw('DAY(date)')
-        ->orderByRaw('YEAR(date)')
+        ->whereDate('date', $selectedDate)
+        ->orderBy('date', $sortByDate)
         ->get();
         $formattedRecords = $attendanceRecords->map(function ($attendance) {
             return [
@@ -556,7 +623,7 @@ public function deleteMember($id)
         });
     
         // Return the view with formatted records
-        return view('admin.attendance', ['attendanceRecords' => $formattedRecords]);
+        return view('admin.attendance', ['attendanceRecords' => $formattedRecords, 'selectedDate' => $selectedDate,]);
     }
     public function handleAttendance(Request $request)
 {
@@ -566,32 +633,72 @@ public function deleteMember($id)
     ]);
 
     $member = Member::find($request->member_id);
-    $attendance = Attendance::where('member_id', $member->member_id)->whereDate('date', Carbon::today())->first();
+    $today = Carbon::today()->format('Y-m-d');
+
+    // Check if an attendance record exists for the member today
+    $attendance = Attendance::where('member_id', $member->member_id)
+        ->whereDate('date', $today)
+        ->first();
 
     if ($attendance) {
-        if ($request->check_in_out == 'check-in') {
+        // Update the check-in or check-out time
+        if ($request->check_in_out === 'check-in') {
             $attendance->check_in_time = Carbon::now()->format('H:i:s');
-        } elseif ($request->check_in_out == 'check-out') {
+        } else {
             $attendance->check_out_time = Carbon::now()->format('H:i:s');
         }
-        $attendance->save();
     } else {
+        // Create a new attendance record if it doesn't exist
         $attendance = new Attendance();
         $attendance->member_id = $member->member_id;
-        $attendance->date = Carbon::today()->format('Y-m-d');
-        if ($request->check_in_out == 'check-in') {
+        $attendance->date = $today;
+
+        if ($request->check_in_out === 'check-in') {
             $attendance->check_in_time = Carbon::now()->format('H:i:s');
-        } elseif ($request->check_in_out == 'check-out') {
+        } else {
             $attendance->check_out_time = Carbon::now()->format('H:i:s');
         }
-        $attendance->save();
     }
 
+    // Save the attendance record
+    $attendance->save();
+
     return redirect()->back()->with('success', 'Attendance recorded successfully!');
+}
+public function generatePdf(Request $request)
+{
+    // Retrieve the selected date from the request or use today's date as default
+    $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+
+    // Fetch attendance records for the selected date
+    $attendanceRecords = Attendance::with('member')
+        ->whereDate('date', $selectedDate)
+        ->orderBy('date', 'asc')
+        ->get();
+
+    // Format attendance data for the PDF view
+    $formattedRecords = $attendanceRecords->map(function ($attendance) {
+        return [
+            'member_name' => $attendance->member->first_name . ' ' . $attendance->member->last_name,
+            'date' => $attendance->date,
+            'check_in_time' => $attendance->check_in_time,
+            'check_out_time' => $attendance->check_out_time,
+        ];
+    });
+
+    // Load the PDF view and pass the attendance data and selected date
+    $pdf = Pdf::loadView('admin.attendance_report', [
+        'attendanceRecords' => $formattedRecords,
+        'selectedDate' => $selectedDate,
+    ]);
+
+    // Return the PDF for download
+    return $pdf->download('attendance_report-' . $selectedDate . '.pdf');
 }
     public function renew(Request $request, $id)
 {
     $member = Member::findOrFail($id);
+    $member->renewed_date = $request->renewed_date;
     $member->subscription_id = $request->input('subscription_id');
     
     // Optionally validate the new date_expired before saving

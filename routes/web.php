@@ -20,8 +20,7 @@ Route::post('/login', [LoginController::class, 'login'])->name('login.submit');
 Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 
 
-Route::post('/notifications/mark-as-read/{id}', [AdminController::class, 'markAsRead'])->name('notifications.markAsRead');
-Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount'])->name('notifications.getUnreadCount');
+
 
 // Admin routes
 Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBackHistory::class]], function () {
@@ -37,6 +36,7 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::post('/admin/subscription/add', [AdminController::class, 'addSubscription'])->name('admin.subscription.add');
     Route::put('/admin/subscription/update', [AdminController::class, 'updateSubscription'])->name('admin.subscription.update');
     Route::delete('/admin/subscription/delete', [AdminController::class, 'deleteSubscription'])->name('admin.subscription.delete');
+    Route::get('/calculate-amount', 'AdminController@calculateAmount');
     Route::get('/admin/payments', [AdminController::class, 'showPaymentForm'])->name('admin.payment.form');
     Route::post('/admin/payments/add', [AdminController::class, 'addPayment'])->name('admin.payment.add');
     Route::put('/admin/payments/update', [AdminController::class, 'updatePayment'])->name('admin.payment.update');
@@ -55,10 +55,12 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::post('/admin/attendance/record', [AdminController::class, 'recordAttendance'])->name('admin.recordAttendance');
     Route::post('/admin/attendance/checkout', [AdminController::class, 'checkOut'])->name('admin.checkOut');
     Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
-
+    Route::get('/attendance/pdf', [AdminController::class, 'generatePdf'])->name('attendance.pdf');
     Route::put('/admin/member/renew/{id}', [AdminController::class, 'renew'])->name('admin.member.renew');
     Route::get('/subscription/{id}', [AdminController::class, 'showValidity']);
-
+    Route::post('/notifications/mark-all-as-read', [AdminController::class, 'markAllNotificationsAsRead'])
+    ->name('notifications.markAllAsRead');
+    Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount']);
 
 });
 

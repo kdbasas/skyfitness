@@ -39,4 +39,9 @@ class Equipment extends Model
      * 
      * You can add more based on how your system is structured.
      */
+
+public function getStatusAttribute($value)
+{
+    return $value === 'active' ? 'available' : 'in_use';
+    }
 }

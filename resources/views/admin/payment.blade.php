@@ -32,7 +32,7 @@
 
         <!-- Payment Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
-            <h1 class="text-4xl font-bold mb-4 text-yellow-500">Make a Payment</h1>
+            <h1 class="text-4xl font-bold mb-4 text-yellow-500">Make a Renewal</h1>
 
             <!-- Payment Form -->
             <form action="{{ route('admin.payment.add') }}" method="POST" class="space-y-4">

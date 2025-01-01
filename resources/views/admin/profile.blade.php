@@ -22,7 +22,7 @@
                 @php
                     $admin = Auth::user();
                     $profileImagePath = $admin && $admin->profile_image 
-                        ? asset('storage/img/' . $admin->profile_image) 
+                        ? asset('storage/img/admin/' . $admin->profile_image) 
                         : asset('images/default-profile.png');
                 @endphp
                 <div class="flex items-center mb-4">

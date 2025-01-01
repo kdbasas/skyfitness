@@ -17,13 +17,14 @@ class Member extends Model
 
     // Allow mass assignment for these attributes
     protected $fillable = [
-        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'subscription_id', 'amount','qr_code',
+        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'subscription_id', 'amount','qr_code','renewed_date','promo', 'id_attachment',
     ];
 
     // Optionally, specify the data types for dates
     protected $dates = [
         'date_joined',
         'date_expired',
+        'renewed_date',
     ];
 
     // Define relationships if needed
