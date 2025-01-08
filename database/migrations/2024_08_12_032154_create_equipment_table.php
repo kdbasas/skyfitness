@@ -13,7 +13,7 @@ class CreateEquipmentTable extends Migration
             $table->string('equipment_picture')->nullable();
             $table->string('equipment_name');
             $table->integer('total_number');
-            $table->enum('status', ['active', 'inactive']);
+            $table->enum('status', ['active', 'inactive', 'damaged', 'maintenance']);
             $table->timestamps();
         });
     }

@@ -11,7 +11,7 @@ class Payment extends Model
 
     protected $table = 'payments'; // Explicitly defining the table name
     protected $primaryKey = 'payment_id'; // Custom primary key
-    protected $fillable = ['member_id', 'subscription_id', 'amount', 'date_paid']; // Mass assignable attributes
+    protected $fillable = ['member_id', 'subscription_id', 'amount', 'date_paid','promo',]; // Mass assignable attributes
 
     /**
      * Get the member associated with the payment.

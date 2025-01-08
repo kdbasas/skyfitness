@@ -1,10 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="flex min-h-screen">
+<div class="flex min-h-screen bg-[#ECE9E9]">
     <!-- Sidebar -->
     @include('include.sidebar')
-    
+
     <!-- Main Content -->
     <div class="flex-1 ml-64 px-4 py-6">
         <!-- Header Section -->
@@ -21,51 +21,86 @@
 
         <!-- Dashboard Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Sales Percentage Pie Chart -->
-            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Sales Percentage</h2>
-                <div class="w-full h-64">
-                    <canvas id="salesPieChart"></canvas>
-                </div>
+            <!-- Active Members -->
+            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-green-500">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Active Members</h2>
+                <ul>
+                    @foreach($activeMembers as $member)
+                        <li class="flex justify-between py-2 border-b border-gray-200">{{ $member->first_name }} {{ $member->last_name }} <span class="font-semibold text-green-500">Active</span></li>
+                    @endforeach
+                </ul>
             </div>
 
-            <!-- Active Members -->
-<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
-    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Active Members</h2>
-    <ul>
-        @foreach($activeMembers as $member)
-            <li class="flex justify-between py-2 border-b border-gray-200">{{ $member->first_name }} {{ $member->last_name }} <span class="font-semibold text-green-500">Active</span></li>
-        @endforeach
-    </ul>
-</div>
+            <!-- Expired Members -->
+            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-red-500">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Expired Members</h2>
+                <ul>
+                    @foreach($expiredMembers as $member)
+                        <li class="flex justify-between py-2 border-b border-gray-200">{{ $member->first_name }} {{ $member->last_name }} <span class="font-semibold text-red-500">Expired</span></li>
+                    @endforeach
+                </ul>
+            </div>
 
-<!-- Inventory Overview -->
-<div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300">
-    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Inventory Overview</h2>
-    <div>
-        <p class="text-gray-600">Total Equipment: <span class="font-bold">{{ $totalEquipment }}</span></p>
-        <p class="text-gray-600">Equipment Unavailable: <span class="font-bold">{{ $equipmentInUse }}</span></p>
-        <p class="text-gray-600">Equipment Available: <span class="font-bold">{{ $equipmentAvailable }}</span></p>
+            <!-- Total Revenue -->
+            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-blue-500">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Total Revenue</h2>
+                <p class="text-gray-600">Total Revenue: <span class="font-bold">${{ number_format($totalRevenue ?? 0, 2) }}</span></p>
+            </div>
+
+            <!-- Inventory Overview -->
+            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-yellow-500">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Inventory Overview</h2>
+                <div>
+                    <p class="text-gray-600">Total Equipment: <span class="font-bold">{{ $totalEquipment }}</span></p>
+                    <p class="text-gray-600">Equipment Unavailable: <span class="font-bold">{{ $equipmentInUse }}</span></p>
+                    <p class="text-gray-600">Equipment Available: <span class="font-bold">{{ $equipmentAvailable }}</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Graph Section -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mt-8">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Growth Graph</h2>
+            <canvas id="growthChart" class="w-full h-64"></canvas>
+        </div>
     </div>
 </div>
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // Initialize Pie Chart
-    const ctx = document.getElementById('salesPieChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'pie',
+    const ctx = document.getElementById('growthChart').getContext('2d');
+    const growthChart = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: ['Membership', 'Personal Training', 'Merchandise'],
+            labels: @json($months ),
             datasets: [{
-                label: 'Sales Percentage',
-                data: [50, 30, 20],
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56'],
-            }],
+                label: 'Monthly Registrations',
+                data: @json($registrationCounts),
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 2,
+                fill: true,
+            }]
         },
         options: {
             responsive: true,
-        },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Registrations'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Months'
+                    }
+                }
+            }
+        }
     });
 </script>
 @endpush

@@ -31,6 +31,7 @@
                         <th class="px-4 py-2 text-left">Date</th>
                         <th class="px-4 py-2 text-left">Check-in Time</th>
                         <th class="px-4 py-2 text-left">Check-out Time</th>
+                        <th class="px-4 py-2 text-left">View Attendance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,6 +41,11 @@
                             <td class="px-4 py-2 border-b">{{ $record['date'] }}</td>
                             <td class="px-4 py-2 border-b">{{ $record['check_in_time'] }}</td>
                             <td class="px-4 py-2 border-b">{{ $record['check_out_time'] }}</td>
+                            <td class="px-4 py-2 border-b">
+                                <a href="{{ route('admin.attendance.view', ['member_id' => optional($record)['member_id']]) }}" class="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition duration-300 ease-in-out">
+                                    View Attendance
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>

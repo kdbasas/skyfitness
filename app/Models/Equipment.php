@@ -25,6 +25,7 @@ class Equipment extends Model
 
     // Enable timestamps to automatically handle created_at and updated_at fields
     public $timestamps = true;
+    
 
     /**
      * Example relationship methods:
@@ -40,8 +41,18 @@ class Equipment extends Model
      * You can add more based on how your system is structured.
      */
 
-public function getStatusAttribute($value)
-{
-    return $value === 'active' ? 'available' : 'in_use';
+     protected $allowedStatuses = [
+        'active',
+        'inactive',
+        'damaged',
+        'maintenance',
+    ];
+
+    public function setStatusAttribute($value)
+    {
+        if (!in_array($value, $this->allowedStatuses)) {
+            throw new \Exception('Invalid status value');
+        }
+        $this->attributes['status'] = $value;
     }
 }

@@ -52,9 +52,10 @@
                     <select id="status" name="status" class="form-select mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
                         <option value="active">Active</option>
                         <option value="inactive">Inactive</option>
+                        <option value="damaged">Damaged</option>
+                        <option value="maintenance">Maintenance</option>
                     </select>
                 </div>
-
                 <div class="flex flex-col">
                     <label for="picture" class="text-sm font-medium text-black">Upload Picture</label>
                     <input type="file" class="form-control-file mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" id="equipment_picture" name="equipment_picture">
@@ -74,7 +75,13 @@
         <!-- Equipment List Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Equipment List</h2>
-
+            <a href="{{ route('admin.equipment.report.download') }}" 
+       class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#0f0c5c] justify-center space-x-1">
+        <!-- Print Icon -->
+        <i class="fas fa-print text-xs"></i>
+        <span class="text-sm">Print</span>
+    </a>      
+</div>       
             <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-[#1A1363] text-white">

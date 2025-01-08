@@ -39,30 +39,17 @@
         .summary p {
             margin: 10px 0;
         }
-        button {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #1A1363;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0f0c5c;
-        }
         @media print {
             body {
                 margin: 0;
                 padding: 0;
             }
-            button {
-                display: none;
-            }
             .report-container {
                 box-shadow: none;
                 border: none;
+            }
+            button {
+                display: none;
             }
         }
     </style>
@@ -75,10 +62,65 @@
         </div>
         <h2>Report Analytics for {{ Carbon\Carbon::parse($selectedMonth)->format('F Y') }}</h2>
 
+        <!-- Summary Section -->
         <div class="summary">
-            <p><strong>Members Registered:</strong> {{ $memberRegistrations }}</p>
-            <p><strong>Total Revenue:</strong> ${{ number_format($totalRevenue, 2) }}</p>
+            <p><strong>Members Registered:</strong> {{ $memberRegistrations ?? 0 }}</p>
+            <p><strong>Total Revenue:</strong> ${{ number_format($totalRevenue ?? 0, 2) }}</p>
         </div>
+
+        <!-- Age Trend Analysis -->
+        @if(isset($ageTrend))
+            <h3 class="text-xl font-semibold mb-2">Age Trend Analysis</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                @foreach($ageTrend as $age => $count)
+                    <div class="bg-orange-600 text-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-lg font-semibold">{{ $age }} years old</h4>
+                        <p class="text-2xl">{{ $count }} members</p>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- Membership Types -->
+        @if(isset($studentMembers) && isset($regularMembers))
+            <h3 class="text-xl font-semibold mb-2">Membership Types</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="bg-purple-600 text-white p-6 rounded-lg shadow-lg">
+                    <h4 class="text-lg font-semibold">Student Members</h4>
+                    <p class="text-2xl">{{ $studentMembers ?? 0 }} ({{ number_format($studentMembersPercentage ?? 0, 2) }}%)</p>
+                </div>
+                <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
+                    <h4 class="text-lg font-semibold">Regular Members</h4>
+                    <p class="text-2xl">{{ $regularMembers ?? 0 }} ({{ number_format($regularMembersPercentage ?? 0, 2) }}%)</p>
+                </div>
+            </div>
+        @endif
+
+        <!-- Revenue by Month -->
+        @if(isset($revenueByMonth))
+            <h3 class="text-xl font-semibold mb-2">Revenue by Month</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                @foreach($revenueByMonth as $month => $revenue)
+                    <div class="bg-teal-600 text-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-lg font-semibold">{{ $month }}</h4>
+                        <p class="text-2xl">${{ number_format($revenue, 2) }}</p>
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        <!-- Top 5 Most Popular Subscriptions -->
+        @if(isset($topSubscriptions))
+            <h3 class="text-xl font-semibold mb-2">Top 5 Most Popular Subscriptions</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                @foreach($topSubscriptions as $subscription)
+                    <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
+                        <h4 class="text-lg font-semibold">{{ $subscription->subscription_name }}</h4>
+                        <p class="text-2xl">{{ $subscription->members_count }} members</p>
+                    </div>
+                @endforeach
+            </div>
+        @endif
 
         <button class="no-print" onclick="window.print()">Print Report</button>
     </div>

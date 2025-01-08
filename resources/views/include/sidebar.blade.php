@@ -1,4 +1,4 @@
-<div class="fixed h-screen bg-gray-900 text-white w-64 flex flex-col top-0 left-0 shadow-lg rounded-tr-2xl rounded-br-2xl">
+<div class="fixed h-screen bg-gray-900 text-white w-64 flex flex-col top-0 left-0 shadow-lg rounded-tr-2xl rounded-br-2xl md:w-1/4 lg:w-1/5">
     <!-- Admin Profile Section -->
     <div class="p-4 bg-gradient-to-r from-gray-800 to-gray-700 flex items-center border-b border-gray-600 rounded-tr-2xl">
         @php
@@ -74,7 +74,6 @@
             </a>
         </li>
 
-
         <!-- Report Analytics -->
         <li>
             <a href="{{ route('admin.reports') }}" class="sidebar-button {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
@@ -85,7 +84,7 @@
 
         <!-- Attendance -->
         <li>
-            <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
+ <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
                 <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Attendance</span>
             </a>
@@ -126,5 +125,16 @@
     
     .sidebar-button i {
         margin-right: 12px;
+    }
+
+    @media (max-width: 768px) {
+        .fixed {
+            width: 100%; /* Full width on smaller screens */
+            height: auto; /* Auto height */
+            position: relative; /* Change position to relative */
+        }
+        .sidebar-button {
+            justify-content: center; /* Center items on smaller screens */
+        }
     }
 </style>

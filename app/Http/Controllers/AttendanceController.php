@@ -16,31 +16,36 @@ class AttendanceController extends Controller
     }
 
     public function generateAttendance(Request $request)
-    {
-        $qrCodeData = $request->input('qr_code');
+{
+    $qrCodeData = $request->input('qr_code');
     
-        // Debugging: Print QR code for verification
-        \Log::info('Received QR Code: ' . $qrCodeData);
+    // Debugging: Print QR code for verification
+    \Log::info('Received QR Code: ' . $qrCodeData);
     
-        // Parse the Member ID from the QR code string
-        // Assuming the QR code is in the format: "Member ID: 21 - Name: Jude Angelo Basas"
-        if (preg_match('/Member ID:\s*(\d+)/', $qrCodeData, $matches)) {
-            $memberId = $matches[1]; // Extracted member ID from the QR code string
-        } else {
-            return response()->json(['message' => 'Invalid QR code format'], 400);
-        }
+    // Parse the Member ID from the QR code string
+    // Assuming the QR code is in the format: "Member ID: 21 - Name: Jude Angelo Basas"
+    if (preg_match('/Member ID:\s*(\d+)/', $qrCodeData, $matches)) {
+        $memberId = $matches[1]; // Extracted member ID from the QR code string
+    } else {
+        return response()->json(['message' => 'Invalid QR code format'], 400);
+    }
     
-        // Find the member using the extracted member ID
-        $member = Member::where('member_id', $memberId)->first();
+    // Find the member using the extracted member ID
+    $member = Member::where('member_id', $memberId)->first();
     
-        if (!$member) {
-            return response()->json(['message' => 'Invalid QR code'], 400);
-        }
+    if (!$member) {
+        return response()->json(['message' => 'Invalid QR code'], 400);
+    }
     
-        // Proceed with attendance logic
-        $attendance = Attendance::where('member_id', $member->member_id)
-            ->whereDate('date', Carbon::today())
-            ->first();
+    // Check if the member's subscription is expired
+    if ($member->date_expired && Carbon::parse($member->date_expired)->lt(Carbon::today())) {
+        return response()->json(['message' => 'Your subscription has expired. Please renew your subscription before checking in.'], 400);
+    }
+    
+    // Proceed with attendance logic
+    $attendance = Attendance::where('member_id', $member->member_id)
+        ->whereDate('date', Carbon::today())
+        ->first();
     
             if ($attendance) {
                 if ($attendance->check_in_time) {

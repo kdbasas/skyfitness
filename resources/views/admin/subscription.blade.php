@@ -37,52 +37,61 @@
         </form>
     </div>
         <!-- Subscription List -->
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-            <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Subscription List</h2>
-            <div class="flex items-center mb-4">
-                <input type="text" id="search" placeholder="Search Subscription Name" class="form-input w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]">
-                <button id="searchButton" class="ml-4 px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#1A1363]">Search</button>
-            </div>
+<div class="bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-6 text-[#1A1363]">Subscription List</h2>
 
-            <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md">
-                <thead>
-                    <tr class="bg-[#1A1363] text-white">
-                        <th class="px-4 py-2 text-left">Subscription Name</th>
-                        <th class="px-4 py-2 text-left">Validity (months)</th>
-                        <th class="px-4 py-2 text-left">Amount</th>
-                        <th class="px-4 py-2 text-left">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($subscriptions as $subscription)
-                        <tr>
-                            <td class="px-4 py-2">{{ $subscription->subscription_name }}</td>
-                            <td class="px-4 py-2">{{ $subscription->validity }}</td>
-                            <td class="px-4 py-2">₱{{ number_format($subscription->amount, 2) }}</td>
-                            <td class="px-4 py-2">
-                                <button 
-                                    onclick="openEditPopup({{ $subscription->subscription_id }}, '{{ $subscription->subscription_name }}', {{ $subscription->validity }}, {{ $subscription->amount }})" 
-                                    class="px-4 py-2 bg-green-500 text-white rounded-lg shadow-md hover:bg-yellow-600"
-                                >
-                                    Edit
-                                </button>
-                                <button 
-                                        onclick="openDeletePopup({{ $subscription->subscription_id }}, '{{ $subscription->subscription_name }}')" 
-                                        class="px-4 py-2 ml-2 bg-red-500 text-white rounded-lg shadow-md hover:bg-red-600"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="4" class="px-4 py-2 text-center">No subscriptions found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+    <div class="flex items-center mb-6">
+        <input 
+            type="text" 
+            id="search" 
+            placeholder="Search Subscription Name" 
+            class="form-input w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363] text-sm p-3 shadow-sm"
+        >
+        <button 
+            id="searchButton" 
+            class="ml-4 px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#0F0D4A] text-sm"
+        >
+            Search
+        </button>
     </div>
+
+    <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md text-sm">
+        <thead>
+            <tr class="bg-[#1A1363] text-white text-left">
+                <th class="px-6 py-3">Subscription Name</th>
+                <th class="px-6 py-3">Validity (Months)</th>
+                <th class="px-6 py-3">Amount</th>
+                <th class="px-6 py-3 text-center">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($subscriptions as $subscription)
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 border-b">{{ $subscription->subscription_name }}</td>
+                    <td class="px-6 py-4 border-b">{{ $subscription->validity }}</td>
+                    <td class="px-6 py-4 border-b">₱{{ number_format($subscription->amount, 2) }}</td>
+                    <td class="px-6 py-4 border-b text-center">
+                        <button 
+                            onclick="openEditPopup({{ $subscription->subscription_id }}, '{{ $subscription->subscription_name }}', {{ $subscription->validity }}, {{ $subscription->amount }})" 
+                            class="px-3 py-2 bg-green-500 text-white rounded shadow-md hover:bg-yellow-600 text-xs"
+                        >
+                            Edit
+                        </button>
+                        <button 
+                            onclick="openDeletePopup({{ $subscription->subscription_id }}, '{{ $subscription->subscription_name }}')" 
+                            class="px-3 py-2 bg-red-500 text-white rounded shadow-md hover:bg-red-600 text-xs ml-2"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center border-b">No subscriptions found.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
 </div>
 
 <!-- Edit Subscription Popup -->
