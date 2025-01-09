@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Rawilk\Printing\Receipts\ReceiptPrinter;
 use Rawilk\Printing\Printing;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
@@ -439,11 +440,19 @@ public function getUnreadCount()
         return redirect()->route('admin.subscription')->with('error', 'Subscription not found.');
     }
 
-    public function showPaymentForm($memberId = null)
+    public function showPaymentForm($memberId = null, Request $request)
 {
     $members = Member::all(); // Fetch all members
     $subscriptions = Subscription::all(); // Fetch all subscriptions
-    $payments = Payment::with('member', 'subscription')->get(); // Fetch all payments with their associated members and subscriptions
+
+    // Get the selected date from the request, default to today
+    $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+
+    // Fetch payments based on the selected date
+    $payments = Payment::with('member', 'subscription')
+        ->whereDate('date_paid', $selectedDate) // Filter by the selected date
+        ->orderBy('date_paid', 'asc') // Default sorting by date
+        ->get(); // Execute the query
 
     // If a member ID is provided, fetch that specific member
     $member = $memberId ? Member::find($memberId) : null; // Use find() to avoid an exception if not found
@@ -453,7 +462,7 @@ public function getUnreadCount()
         return redirect()->back()->with('error', 'Member not found.'); // Redirect with an error message
     }
 
-    return view('admin.payment', compact('members', 'subscriptions', 'payments', 'member'));
+    return view('admin.payment', compact('members', 'subscriptions', 'payments', 'member', 'selectedDate'));
 }
 public function addPayment(Request $request)
 {
@@ -463,25 +472,32 @@ public function addPayment(Request $request)
         'member_id' => 'required|exists:members,member_id',
         'subscription_id' => 'required|exists:subscriptions,subscription_id',  // Ensure this points to the correct column
         'date_paid' => 'required|date',
-       'promo' => 'required|string', // Ensure promo is validated
+        'promo' => 'required|string', // Ensure promo is validated
     ]);
     
     $member = Member::find($request->member_id);
     $promo = $request->input('promo');
+    
     // Fetch the subscription to get the validity
     $subscription = Subscription::find($request->subscription_id);
+    
+    // Calculate the amount based on the subscription validity and promo
     $amount = 0;
 
-    if ($promo == 'Student') {
-        $amount = 450 * $subscription->validity; // Assuming validity is in months
-    } elseif ($promo == 'Regular') {
-        $amount = 500 * $subscription->validity; // Assuming validity is in months
+    if ($subscription) {
+        // Calculate the total amount based on the promo and subscription validity
+        if ($promo == 'Student') {
+            $amount = 450 * $subscription->validity; // Assuming validity is in months
+        } elseif ($promo == 'Regular') {
+            $amount = 500 * $subscription->validity; // Assuming validity is in months
+        }
     }
+
     // Debugging: Log the calculated amount
     \Log::info('Calculated Amount:', ['amount' => $amount]);
 
     // Create the payment record
-    Payment::create([
+    $payment = Payment::create([
         'member_id' => $request->member_id,
         'subscription_id' => $request->subscription_id,
         'amount' => $amount, // Use the calculated amount
@@ -489,67 +505,86 @@ public function addPayment(Request $request)
         'promo' => $promo, // Store the promo selected
     ]);
 
-    // Update the member's renewal date
-    $member = Member::find($request->member_id);
+    // Update the member's renewal date and subscription details
     $validityPeriodInMonths = $subscription->validity;
+
+    // If the member already has an expiration date, add the validity period to it
     if ($member->date_expired) {
         $member->date_expired = Carbon::parse($member->date_expired)->addMonths($validityPeriodInMonths)->format('Y-m-d');
     } else {
+        // If no expiration date exists, set it based on the current date
         $member->date_expired = Carbon::now()->addMonths($validityPeriodInMonths)->format('Y-m-d');
     }
-    $member->save();
+
+    // Update the member's subscription and promo
+    $member->subscription_id = $request->subscription_id;
+    $member->promo = $promo; // Update the promo field if needed
+
+    // Update the total amount for the member
+    $member->amount = ($member->amount ?? 0) + $amount; // Add the new payment amount to the existing amount
+    $member->save(); // Save the updated member record
 
     return redirect()->route('admin.payment.form')->with('success', 'Payment recorded successfully!');
 }
 public function editPayment($id)
 {
-    $payment = Payment::find($id);
-    $members = Member::all();
+    $payment = Payment::findOrFail($id);
     $subscriptions = Subscription::all();
+    $members = Member::all();
 
-    return view('admin.payment_edit', compact('payment', 'members', 'subscriptions'));
+    return view('admin.payment.form', compact('payment', 'subscriptions', 'members'));
 }
 public function updatePayment(Request $request, $id)
 {
-    $request->validate([
-        'member_id' => 'required|exists:members,member_id',
+    // Find the payment by ID or fail
+    $payment = Payment::findOrFail($id);
+    
+    // Validate the incoming request data
+    $validatedData = $request->validate([
         'subscription_id' => 'required|exists:subscriptions,subscription_id',
-        'amount' => 'required|numeric|min:0',
+        'promo' => 'required|string',
         'date_paid' => 'required|date',
+        'amount' => 'required|numeric',
     ]);
 
-    $payment = Payment::find($id);
-    $payment->update([
-        'member_id' => $request->member_id,
-        'subscription_id' => $request->subscription_id,
-        'amount' => $request->amount,
-        'date_paid' => $request->date_paid,
-    ]);
+    // Update payment information
+    $payment->subscription_id = $validatedData['subscription_id'];
+    $payment->promo = $validatedData['promo'];
+    $payment->date_paid = $validatedData['date_paid'];
+    $payment->amount = $validatedData['amount'];
 
-    return redirect()->route('admin.payment.form')->with('success', 'Payment updated successfully!');
-}
+    // Save the updated payment
+    $payment->save();
 
-public function deletePayment(Request $request)
-{
-    $id = $request->input('id');
-    $payment = Payment::find($id);
+    // Update the member's subscription and promo
+    $member = Member::findOrFail($payment->member_id);
+    $member->subscription_id = $validatedData['subscription_id'];
+    $member->promo = $validatedData['promo'];
 
-    if ($payment) {
-        $payment->delete();
-        return redirect()->route('admin.payment.form')->with('success', 'Payment deleted successfully.');
+    // Calculate the new expiration date based on the subscription validity
+    $subscription = Subscription::find($validatedData['subscription_id']);
+    if ($subscription) {
+        if ($member->date_expired) {
+            // Add the validity period of the new subscription to the existing expiration date
+            $member->date_expired = Carbon::parse($member->date_expired)->addMonths($subscription->validity)->format('Y-m-d');
+        } else {
+            // If no expiration date exists, set it based on the current date
+            $member->date_expired = Carbon::now()->addMonths($subscription->validity)->format('Y-m-d');
+        }
     }
 
-    return redirect()->route('admin.payment.form')->with('error', 'Payment not found.');
+    // Save the updated member record
+    $member->save();
+
+    return redirect()->route('admin.payment.form', ['id' => $payment->payment_id])
+        ->with('success', 'Payment updated successfully');
 }
-public function showPaymentHistory(Request $request)
+public function deletePayment($id)
 {
-    $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
+    $payment = Payment::findOrFail($id); // Find the payment by ID
+    $payment->delete(); // Delete the payment
 
-    $payments = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
-        ->get();
-
-    return view('admin.payment_history', compact('payments', 'selectedMonth'));
+    return redirect()->back()->with('success', 'Payment deleted successfully');
 }
 
 // Download Payment History
@@ -577,7 +612,20 @@ public function downloadPaymentHistory(Request $request)
         $equipments = Equipment::all();
         return view('admin.equipment_inventory', compact('equipments'));
     }
-
+    public function generatePaymentReport(Request $request)
+    {
+        $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+    
+        // Fetch payments for the selected date
+        $payments = Payment::with('member', 'subscription')
+            ->whereDate('date_paid', $selectedDate)
+            ->get();
+    
+        // Generate the PDF
+        $pdf = PDF::loadView('admin.payment_report', compact('payments', 'selectedDate'));
+    
+        return $pdf->download("payment_report_{$selectedDate}.pdf");
+    }
     // Add New Equipment
     // Add New Equipment
 public function addEquipment(Request $request)
@@ -786,16 +834,13 @@ public function downloadReportEquipment(Request $request)
             'promo' => $validated['promo'],
         ]);
 
-        // Generate the receipt PDF
-        $pdf = PDF::loadView('admin.receipt_pdf', compact('member'))
-            ->setPaper([0, 0, 164, 300], 'portrait'); // 58mm width and a height of 300 points
+        $pdf = Pdf::loadView('admin.receipt_pdf', compact('member'));
 
-        // Save the PDF to a temporary file
-        $pdfFilename = 'receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf';
-        $pdfPath = storage_path('app/public/' . $pdfFilename);
-        $pdf->save($pdfPath);
-        $member->update(['receipt_path' => $pdfFilename]);
+        $pdf->setPaper('A4', 'portrait');
 
+        $pdf->save(storage_path('app/public/receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf'));
+
+        $member->update(['receipt_path' => 'receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf']);
         // Return view with auto-print JS
         return view('admin.receipt', compact('member', 'pdfFilename'))
             ->with('success', 'Member registered successfully!');

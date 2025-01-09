@@ -40,9 +40,10 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::get('/admin/payments/{memberId?}', [AdminController::class, 'showPaymentForm'])->name('admin.payment.form');
     Route::get('/admin/member/renew/{memberId}', [AdminController::class, 'showRenewalForm'])->name('admin.member.renew');
     Route::post('/admin/payments/add', [AdminController::class, 'addPayment'])->name('admin.payment.add');
-    Route::get('/admin/payment/{id}/edit', 'AdminController@editPayment')->name('admin.payment.edit');
-    Route::put('/admin/payments/update', [AdminController::class, 'updatePayment'])->name('admin.payment.update');
+    Route::get('admin/payment/edit/{id}', [AdminController::class, 'editPayment'])->name('admin.payment.edit');
+    Route::put('admin/payment/update/{id}', [AdminController::class, 'updatePayment'])->name('admin.payment.update');
     Route::delete('/admin/payments/{id}/delete', [AdminController::class, 'deletePayment'])->name('admin.payment.delete');
+    Route::get('/admin/payment/report', [AdminController::class, 'generatePaymentReport'])->name('payment.pdf');
     Route::get('/admin/members/{id}/subscription', [AdminController::class, 'getMemberSubscription']);
     Route::get('/admin/inventory', [AdminController::class, 'showInventory'])->name('admin.equipment_inventory');
     Route::get('/admin/inventory/{id}', [AdminController::class, 'showInventory'])->name('admin.inventory.details'); 

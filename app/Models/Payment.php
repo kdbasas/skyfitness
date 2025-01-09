@@ -13,6 +13,10 @@ class Payment extends Model
     protected $primaryKey = 'payment_id'; // Custom primary key
     protected $fillable = ['member_id', 'subscription_id', 'amount', 'date_paid','promo',]; // Mass assignable attributes
 
+    // Casts
+    protected $casts = [
+        'date_paid' => 'datetime', // Cast date_paid to a Carbon instance
+    ];
     /**
      * Get the member associated with the payment.
      */
