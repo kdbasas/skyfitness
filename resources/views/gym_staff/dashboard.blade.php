@@ -1,13 +1,9 @@
-@extends('layouts.main')
+@extends('layouts.app')
 
 @section('content')
     <div class="p-6 bg-gray-100 min-h-screen">
         <div class="container mx-auto">
-            <!-- Welcome Message -->
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold text-gray-800">Welcome, {{ Auth::user()->name }}!</h1>
-            </div>
-
+        
             <!-- Dashboard Overview -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Attendance Overview -->

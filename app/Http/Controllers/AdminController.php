@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\GymStaff;
+use App\Models\Gender; 
 use App\Models\User;
 use App\Models\Subscription;
 use App\Models\Receipt;
@@ -17,6 +19,7 @@ use Rawilk\Printing\Receipts\ReceiptPrinter;
 use Rawilk\Printing\Printing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Session;
@@ -1115,4 +1118,78 @@ public function downloadReport(Request $request)
 
     return redirect()->back()->with('error', 'Member not found.');
 }
+
+public function showStaffManagement(Request $request)
+{
+    $search = $request->input('search');
+    
+    // Query to fetch gym staff with search functionality
+    $gym_staffs = GymStaff::when($search, function ($query, $search) {
+        $query->where('first_name', 'like', "%{$search}%")
+              ->orWhere('last_name', 'like', "%{$search}%")
+              ->orWhere('username', 'like', "%{$search}%")
+              ->orWhere('email', 'like', "%{$search}%");
+    })->paginate(10); // Paginate results  
+    $genders = Gender::all(); // Make sure to import the Gender model 
+    // Debugging: Check if gym_staff is a collection
+    if ($gym_staffs->isEmpty()) {
+        \Log::info('No gym staff found.');
+    } else {
+        \Log::info('Gym staff found:', $gym_staffs->toArray());
+    }
+
+    return view('admin.staff_management', compact('gym_staffs', 'genders'));
 }
+    
+public function storeStaff(Request $request)
+{
+    // Validate input data
+    $request->validate([
+        'email' => 'required|email|unique:gym_staffs,email|unique:users,email',
+        'password' => 'required|string|min:8',
+        'first_name' => 'required|string|max:255',
+        'middle_name' => 'nullable|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'suffix_name' => 'nullable|string|max:55',
+        'age' => 'required|integer|min:18',
+        'contact_number' => 'required|string|max:20',
+        'gender_id' => 'required|exists:genders,gender_id',
+        'profile_image' => 'nullable|image|max:2048',
+    ]);
+
+    try {
+        // Create a new GymStaff instance
+        $gym_staffs = new GymStaff();
+        $gym_staffs->email = $request->email;
+        $gym_staffs->first_name = $request->first_name;
+        $gym_staffs->middle_name = $request->middle_name;
+        $gym_staffs->last_name = $request->last_name;
+        $gym_staffs->suffix_name = $request->suffix_name;
+        $gym_staffs->age = $request->age;
+        $gym_staffs->contact_number = $request->contact_number;
+        $gym_staffs->gender_id = $request->gender_id;
+        $gym_staffs->role = 'gym_staff'; // Default role as gym staff
+        
+        // Handle password encryption
+        if ($request->filled('password')) {
+            $gym_staffs->password = bcrypt($request->input('password'));
+        }
+
+        // Handle the profile image upload (if provided)
+        if ($request->hasFile('profile_image')) {
+            // Store the profile image in the specified directory and assign the file path
+            $gym_staffs->profile_image = $request->file('profile_image')->store('img/gym_staff', 'public');
+        }
+
+        // Save the new gym staff member to the database
+        $gym_staffs->save();
+
+        // Log success and redirect
+        \Log::info("New gym staff registered: {$gym_staffs->email}");
+        return redirect()->route('admin.staff.management')->with('success', 'Staff member registered successfully!');
+    } catch (\Exception $e) {
+        // Log the error message and return a failure response
+        \Log::error('Error saving gym staff: ' . $e->getMessage());
+        return back()->withErrors('Failed to register staff. Please try again.');
+    }
+}}

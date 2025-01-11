@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('staff'); // Add this line
+            $table->string('role')->default('gym_staff'); // Add this line
         });
     }
 

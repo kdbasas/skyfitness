@@ -10,9 +10,14 @@ class GymStaffController extends Controller
     // Show Staff Dashboard
     public function dashboard()
     {
-        return view('staff.dashboard'); // Ensure you have this view
+        if (Auth::guard('gym_staff')->check()) {
+            $gymStaff = Auth::guard('gym_staff')->user();
+            // Rest of your code here
+        } else {
+            // Handle the case where the user is not authenticated
+            return redirect()->route('login');
+        }
     }
-
     // Show Staff Profile (example)
     public function showProfile()
     {

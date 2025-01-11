@@ -40,6 +40,10 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'gym_staff' => [ // Add this line
+            'driver' => 'session',
+            'provider' => 'gym_staffs',
+        ],
     ],
 
     /*
@@ -65,11 +69,11 @@ return [
             'model' => App\Models\User::class,
         ],
 
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'gym_staffs' => [
+        'driver' => 'eloquent',
+        'model' => App\Models\GymStaff::class,
     ],
+],
 
     /*
     |--------------------------------------------------------------------------
@@ -93,8 +97,13 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+    'gym_staffs' => [
+            'provider' => 'gym_staffs', // Add this for gym_staff password resets
+            'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
-
     /*
     |--------------------------------------------------------------------------
     | Password Confirmation Timeout

@@ -54,15 +54,15 @@
         <li>
             <a href="{{ route('admin.payment.form') }}" class="sidebar-button {{ request()->routeIs('admin.payment.form') ? 'active' : '' }}">
                 <i class="fas fa-money-bill-wave text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Payment</span>
+                <span class="text-base font-medium">Payment Renewal</span>
             </a>
         </li>
 
         <!-- Staff Registration -->
         <li>
-            <a href="#" class="sidebar-button {{ request()->routeIs('admin.registration') ? 'active' : '' }}">
+            <a href="{{ route('admin.staff.management') }}" class="sidebar-button {{ request()->routeIs('admin.staff.management') ? 'active' : '' }}">
                 <i class="fas fa-user-plus text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Staff</span>
+                <span class="text-base font-medium">Staff Management</span>
             </a>
         </li>
 

@@ -3,6 +3,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\GymStaffController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Middleware\StaffMiddleware;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -70,11 +71,13 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::post('/admin/member/renew/{id}', [AdminController::class, 'renew'])->name('admin.member.renew');
     Route::get('/admin/payment-history', [AdminController::class, 'showPaymentHistory'])->name('admin.payment.history');
     Route::get('/admin/payment-history/download', [AdminController::class, 'downloadPaymentHistory'])->name('admin.payment.history.download');
+    Route::get('/admin/staff-management', [AdminController::class, 'showStaffManagement'])->name('admin.staff.management');
+    Route::post('/admin/staff-management/add', [AdminController::class, 'storeStaff'])->name('admin.staff.add');
 });
 
 
-Route::group(['middleware' => ['auth', 'staff']], function () {
-    Route::get('/staff/dashboard', [GymStaffController::class, 'dashboard'])->name('staff.dashboard');
+Route::group(['middleware' => ['auth:gym_staff']], function () {
+    Route::get('/gym_staff/dashboard', [GymStaffController::class, 'dashboard'])->name('gym_staff.dashboard');
     Route::get('/staff/profile', [GymStaffController::class, 'showProfile'])->name('staff.profile');
     Route::post('/staff/profile/update', [GymStaffController::class, 'updateProfile'])->name('staff.profile.update');
     // Other staff routes...
