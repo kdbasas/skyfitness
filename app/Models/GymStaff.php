@@ -10,7 +10,8 @@ class GymStaff extends Authenticatable
 {
     use HasFactory;
 
-    protected $table = 'gym_staffs'; // Specify the table name if it's not the plural form of the model name
+    protected $table = 'gym_staffs'; 
+    protected $primaryKey = 'gymstaff_id';// Specify the table name if it's not the plural form of the model name
 
     protected $fillable = [
         'email',

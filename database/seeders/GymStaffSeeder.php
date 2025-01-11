@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\GymStaff;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Seeder;
 
 class GymStaffSeeder extends Seeder
@@ -17,7 +18,7 @@ class GymStaffSeeder extends Seeder
     {
         GymStaff::create([
             'email' => 'karl@gmail.com',
-            'password' => bcrypt('password'),
+            'password' => Hash::make('123'),
             'first_name' => 'Karl',
             'middle_name' => '',
             'last_name' => 'Smith',

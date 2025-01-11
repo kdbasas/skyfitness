@@ -1143,10 +1143,9 @@ public function showStaffManagement(Request $request)
     
 public function storeStaff(Request $request)
 {
-    // Validate input data
     $request->validate([
         'email' => 'required|email|unique:gym_staffs,email|unique:users,email',
-        'password' => 'required|string|min:8',
+        'password' => 'required|string|min:3',
         'first_name' => 'required|string|max:255',
         'middle_name' => 'nullable|string|max:255',
         'last_name' => 'required|string|max:255',
@@ -1158,38 +1157,21 @@ public function storeStaff(Request $request)
     ]);
 
     try {
-        // Create a new GymStaff instance
-        $gym_staffs = new GymStaff();
-        $gym_staffs->email = $request->email;
-        $gym_staffs->first_name = $request->first_name;
-        $gym_staffs->middle_name = $request->middle_name;
-        $gym_staffs->last_name = $request->last_name;
-        $gym_staffs->suffix_name = $request->suffix_name;
-        $gym_staffs->age = $request->age;
-        $gym_staffs->contact_number = $request->contact_number;
-        $gym_staffs->gender_id = $request->gender_id;
-        $gym_staffs->role = 'gym_staff'; // Default role as gym staff
-        
-        // Handle password encryption
-        if ($request->filled('password')) {
-            $gym_staffs->password = bcrypt($request->input('password'));
-        }
+        $gym_staff = new GymStaff();
+        $gym_staff->fill($request->all());
+        $gym_staff->password = bcrypt($request->input('password'));
+        $gym_staff->save();
 
-        // Handle the profile image upload (if provided)
-        if ($request->hasFile('profile_image')) {
-            // Store the profile image in the specified directory and assign the file path
-            $gym_staffs->profile_image = $request->file('profile_image')->store('img/gym_staff', 'public');
-        }
+        User::create([
+            'name' => $request->input('first_name'),
+            'email' => $request->input('email'),
+            'password' => bcrypt($request->input('password')),
+            'role' => 'gym_staff',
+        ]);
 
-        // Save the new gym staff member to the database
-        $gym_staffs->save();
-
-        // Log success and redirect
-        \Log::info("New gym staff registered: {$gym_staffs->email}");
         return redirect()->route('admin.staff.management')->with('success', 'Staff member registered successfully!');
     } catch (\Exception $e) {
-        // Log the error message and return a failure response
-        \Log::error('Error saving gym staff: ' . $e->getMessage());
         return back()->withErrors('Failed to register staff. Please try again.');
     }
-}}
+}
+}

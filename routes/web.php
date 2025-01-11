@@ -78,6 +78,10 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
 
 Route::group(['middleware' => ['auth:gym_staff']], function () {
     Route::get('/gym_staff/dashboard', [GymStaffController::class, 'dashboard'])->name('gym_staff.dashboard');
+    Route::get('/gym_staff/members', [AdminController::class, 'showMembers'])->name('gym_staff.member_management');
+    Route::post('/gym_staff/member_management/add', [AdminController::class, 'addMember'])->name('gym_staff.member.add');
+    Route::delete('gym_staff/member/delete/{id}', [AdminController::class, 'deleteMember'])->name('gym_staff.member.delete');
+    Route::put('/admin/member/update/{id}', [AdminController::class, 'updateMember'])->name('gym_staff.member.update');
     Route::get('/staff/profile', [GymStaffController::class, 'showProfile'])->name('staff.profile');
     Route::post('/staff/profile/update', [GymStaffController::class, 'updateProfile'])->name('staff.profile.update');
     // Other staff routes...

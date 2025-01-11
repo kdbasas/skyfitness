@@ -18,10 +18,10 @@ class StaffMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::guard('gym_staff')->check()) {
+        if (Auth::check() && Auth::user()->role === 'gym_staff') {
             return $next($request);
         }
 
-        return redirect()->route('login')->withErrors(['role' => 'Unauthorized access']);
+        return redirect('/login')->withErrors(['You do not have gym_staff access.']);
     }
 }
