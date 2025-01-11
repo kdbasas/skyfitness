@@ -3,7 +3,7 @@
 @section('content')
 <div class="flex min-h-screen">
     <!-- Sidebar -->
-    @include('include.sidebar')
+    @include('include.sidebarstaff')
 
     <!-- Main Content -->
     <div class="flex-1 ml-64 p-6 bg-[#ECE9E9]">
@@ -36,7 +36,7 @@
     <h2 class="text-2xl font-bold mb-4 text-[#1A1363] text-center">Registration</h2>
 
     <!-- Registration Form -->
-    <form action="{{ route('admin.member.add') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
+    <form action="{{ route('gym_staff.member.add') }}" method="POST" class="space-y-4" enctype="multipart/form-data">
         @csrf
         <!-- Form Fields -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -257,7 +257,7 @@
         document.getElementById('edit_date_joined').value = formattedDateJoined;
 
         // Set the form action dynamically based on member ID
-        document.getElementById('edit-form').action = `{{ route('admin.member.update', ':id') }}`.replace(':id', id);
+        document.getElementById('edit-form').action = `{{ route('gym_staff.member.update', ':id') }}`.replace(':id', id);
 
         document.getElementById('edit-popup').classList.remove('hidden');
     }
@@ -268,7 +268,7 @@
 
     function openDeletePopup(id, fullName) {
         document.getElementById('delete_member_name').textContent = fullName;
-        document.getElementById('delete-form').action = `{{ route('admin.member.delete', ':id') }}`.replace(':id', id);
+        document.getElementById('delete-form').action = `{{ route('gym_staff.member.delete', ':id') }}`.replace(':id', id);
         document.getElementById('delete-popup').classList.remove('hidden');
     }
 

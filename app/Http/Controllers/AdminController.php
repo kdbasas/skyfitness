@@ -1159,6 +1159,11 @@ public function storeStaff(Request $request)
     try {
         $gym_staff = new GymStaff();
         $gym_staff->fill($request->all());
+        if ($request->hasFile('profile_image')) {
+            $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
+            $gym_staff->profile_image = $imagePath;
+        }
+
         $gym_staff->password = bcrypt($request->input('password'));
         $gym_staff->save();
 

@@ -2,6 +2,7 @@
 
 @section('content')
     <div class="p-6 bg-gray-100 min-h-screen">
+        @include('include.sidebarstaff')
         <div class="container mx-auto">
         
             <!-- Dashboard Overview -->

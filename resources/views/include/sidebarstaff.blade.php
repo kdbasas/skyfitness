@@ -11,82 +11,16 @@
             <img src="{{ $profileImagePath }}" alt="Admin Profile Picture" class="w-full h-full object-cover">
         </div>
         <div class="ml-4">
-            <div class="text-lg font-bold">{{ $admin ? $admin->name : 'Guest' }}</div>
-            <div class="text-sm text-gray-400">{{ $admin ? $admin->email : '' }}</div>
+            <div class="text-lg font-bold">{{ $gymStaff ? $gymStaff->name : 'Guest' }}</div>
+            <div class="text-sm text-gray-400">{{ $gymStaff ? $gymStaff->email : '' }}</div>
         </div>
     </div>
 
-    <!-- Sidebar Menu -->
-    <ul class="mt-4 flex-grow flex flex-col space-y-1 px-4">
-        <!-- Dashboard -->
-        <li>
-            <a href="{{ route('admin.dashboard') }}" class="sidebar-button {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <i class="fas fa-tachometer-alt text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Dashboard</span>
-            </a>
-        </li>
-
-        <!-- Admin Profile -->
-        <li>
-            <a href="{{ route('admin.profile') }}" class="sidebar-button {{ request()->routeIs('admin.profile') ? 'active' : '' }}">
-                <i class="fas fa-user text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Admin Profile</span>
-            </a>
-        </li>
-
         <!-- Member Management -->
         <li>
-            <a href="{{ route('admin.member_management') }}" class="sidebar-button {{ request()->routeIs('admin.member_management') ? 'active' : '' }}">
+            <a href="{{ route('gym_staff.member_management') }}" class="sidebar-button {{ request()->routeIs('gym_staff.member_management') ? 'active' : '' }}">
                 <i class="fas fa-users text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Member Management</span>
-            </a>
-        </li>
-
-        <!-- Subscription/Plan -->
-        <li>
-            <a href="{{ route('admin.subscription') }}" class="sidebar-button {{ request()->routeIs('admin.subscription') ? 'active' : '' }}">
-                <i class="fas fa-calendar-alt text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Subscription</span>
-            </a>
-        </li>
-
-        <!-- Payment -->
-        <li>
-            <a href="{{ route('admin.payment.form') }}" class="sidebar-button {{ request()->routeIs('admin.payment.form') ? 'active' : '' }}">
-                <i class="fas fa-money-bill-wave text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Payment Renewal</span>
-            </a>
-        </li>
-
-        <!-- Staff Registration -->
-        <li>
-            <a href="{{ route('admin.staff.management') }}" class="sidebar-button {{ request()->routeIs('admin.staff.management') ? 'active' : '' }}">
-                <i class="fas fa-user-plus text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Staff Management</span>
-            </a>
-        </li>
-
-        <!-- Inventory -->
-        <li>
-            <a href="{{ route('admin.equipment_inventory') }}" class="sidebar-button {{ request()->routeIs('admin.inventory') ? 'active' : '' }}">
-                <i class="fas fa-dumbbell text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Inventory</span>
-            </a>
-        </li>
-
-        <!-- Report Analytics -->
-        <li>
-            <a href="{{ route('admin.reports') }}" class="sidebar-button {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
-                <i class="fas fa-chart-line text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Report Analytics</span>
-            </a>
-        </li>
-
-        <!-- Attendance -->
-        <li>
- <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
-                <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Attendance</span>
             </a>
         </li>
         <li>
