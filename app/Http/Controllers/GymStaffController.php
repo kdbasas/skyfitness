@@ -17,6 +17,7 @@ use Rawilk\Printing\Printing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -32,12 +33,41 @@ class GymStaffController extends Controller
     if (Auth::guard('gym_staff')->check()) {
         $gymStaff = Auth::guard('gym_staff')->user();
         \Log::info('Authenticated gym staff: ' . $gymStaff->email);
-        return view('gym_staff.dashboard', compact('gymStaff'));
-    } else {
-        \Log::warning('Gym staff not authenticated.');
-        return redirect()->route('login')->with('error', 'You must be logged in to access the dashboard.');
+
+        $notifications = [];
+
+        // Subscription Expiry Notification (5 days before expiry)
+        $expiringMembers = Member::whereDate('date_expired', '<=', Carbon::now()->addDays(5))->get();
+        foreach ($expiringMembers as $member) {
+            $notifications[] = [
+                'message' => "Subscription for {$member->first_name} {$member->last_name} is expiring in 5 days!",
+                'type' => 'warning',
+            ];
+        }
+
+        // Update expired members' status
+        $expiredMembers = Member::whereDate('date_expired', '<=', Carbon::now())->get();
+        foreach ($expiredMembers as $member) {
+            $member->status = 'inactive';
+            $member->save();
+        }
+
+         // Fetch members
+    $members = Member::all();
+
+    // Fetch equipment
+    $equipment = Equipment::all();
+
+    // Fetch attendance records
+    $attendance = Attendance::all();
+
+    // Fetch notifications
+    $notifications = [];
+
+    return view('gym_staff.dashboard', compact('gymStaff', 'members', 'equipment', 'attendance', 'notifications'));
     }
 }
+
  public function showMembers(Request $request)
  {
      $search = $request->input('search');

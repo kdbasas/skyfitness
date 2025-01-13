@@ -1164,8 +1164,7 @@ public function storeStaff(Request $request)
         $profileImage = $request->file('profile_image');
         $profileImageFilename = time() . '.' . $profileImage->getClientOriginalExtension();
         $profileImage->storeAs('public/img/gym_staff', $profileImageFilename);
-        $gym_staff->profile_image = asset('storage/img/gym_staff/' . $profileImageFilename);
-
+        $gym_staff->profile_image = 'img/gym_staff/' . $profileImageFilename;
 
         $gym_staff->password = bcrypt($request->input('password'));
         $gym_staff->save();

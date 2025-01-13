@@ -3,13 +3,7 @@
     <div class="p-4 bg-gradient-to-r from-gray-800 to-gray-700 flex items-center border-b border-gray-600 rounded-tr-2xl">
         @php
         $gymStaff = Auth::guard('gym_staff')->user();
-        $profileImagePath = $gymStaff && $gymStaff->profile_image 
-            ? asset('storage/img/gym_staff/' . $gymStaff->profile_image) 
-            : asset('images/default-profile.png');
     @endphp
-    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500">
-        <img src="{{ $profileImagePath }}" alt="Gym Staff Profile Picture" class="w-full h-full object-cover">
-    </div>
         <div class="ml-4">
             @if ($gymStaff)
                 <div class="text-lg font-bold">{{ $gymStaff->first_name . ' ' . $gymStaff->last_name }}</div>
@@ -19,6 +13,14 @@
             @endif
         </div>
     </div>
+    <ul class="flex flex-col mt-4">
+        <!-- Dashboard -->
+        <li>
+            <a href="{{ route('gym_staff.dashboard') }}" class="sidebar-button {{ request()->routeIs('gym_staff.dashboard') ? 'active' : '' }}">
+                <i class="fas fa-tachometer-alt text-white text-lg mr-3"></i>
+                <span class="text-base font-medium">Dashboard</span>
+            </a>
+        </li>
 
         <!-- Member Management -->
         <li>
