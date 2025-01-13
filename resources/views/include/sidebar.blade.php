@@ -54,7 +54,7 @@
         <li>
             <a href="{{ route('admin.payment.form') }}" class="sidebar-button {{ request()->routeIs('admin.payment.form') ? 'active' : '' }}">
                 <i class="fas fa-money-bill-wave text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Payment Renewal</span>
+                <span class="text-base font-medium">Payment</span>
             </a>
         </li>
 

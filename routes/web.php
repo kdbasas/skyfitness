@@ -73,6 +73,8 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::get('/admin/payment-history/download', [AdminController::class, 'downloadPaymentHistory'])->name('admin.payment.history.download');
     Route::get('/admin/staff-management', [AdminController::class, 'showStaffManagement'])->name('admin.staff.management');
     Route::post('/admin/staff-management/add', [AdminController::class, 'storeStaff'])->name('admin.staff.add');
+    Route::put('/admin/staff-management/update/{id}', [AdminController::class, 'updateStaff'])->name('admin.staff.edit');
+    Route::delete('/admin/staff-management/delete/{id}', [AdminController::class, 'deleteStaff'])->name('admin.staff.delete');
 });
 
 

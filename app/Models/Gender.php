@@ -10,6 +10,8 @@ class Gender extends Model
     use HasFactory;
 
     protected $table = 'genders'; // Specify the table name if necessary
+    protected $primaryKey = 'gender_id';
+
 
     protected $fillable = [
         'name',

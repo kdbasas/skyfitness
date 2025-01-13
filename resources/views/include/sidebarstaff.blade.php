@@ -1,18 +1,22 @@
 <div class="fixed h-screen bg-gray-900 text-white w-64 flex flex-col top-0 left-0 shadow-lg rounded-tr-2xl rounded-br-2xl md:w-1/4 lg:w-1/5">
-    <!-- Admin Profile Section -->
+    <!-- Gym Staff Profile Section -->
     <div class="p-4 bg-gradient-to-r from-gray-800 to-gray-700 flex items-center border-b border-gray-600 rounded-tr-2xl">
         @php
-            $gymStaff = Auth::user();
-            $profileImagePath = $gymStaff && $gymStaff->profile_image 
-                ? asset('storage/img/admin/' . $gymStaff->profile_image) 
-                : asset('images/default-profile.png');
-        @endphp
-        <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500">
-            <img src="{{ $profileImagePath }}" alt="Admin Profile Picture" class="w-full h-full object-cover">
-        </div>
+        $gymStaff = Auth::guard('gym_staff')->user();
+        $profileImagePath = $gymStaff && $gymStaff->profile_image 
+            ? asset('storage/img/gym_staff/' . $gymStaff->profile_image) 
+            : asset('images/default-profile.png');
+    @endphp
+    <div class="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-500">
+        <img src="{{ $profileImagePath }}" alt="Gym Staff Profile Picture" class="w-full h-full object-cover">
+    </div>
         <div class="ml-4">
-            <div class="text-lg font-bold">{{ $gymStaff ? $gymStaff->name : 'Guest' }}</div>
-            <div class="text-sm text-gray-400">{{ $gymStaff ? $gymStaff->email : '' }}</div>
+            @if ($gymStaff)
+                <div class="text-lg font-bold">{{ $gymStaff->first_name . ' ' . $gymStaff->last_name }}</div>
+                <div class="text-sm text-gray-400">{{ $gymStaff->email }}</div>
+            @else
+                <div class="text-lg font-bold">Guest</div>
+            @endif
         </div>
     </div>
 

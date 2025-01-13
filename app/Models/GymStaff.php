@@ -37,6 +37,10 @@ class GymStaff extends Authenticatable
 // Define the relationship with the Gender model
 public function gender()
 {
-    return $this->belongsTo(Gender::class, 'gender_id'); // Assuming you have a Gender model
+    return $this->belongsTo(Gender::class, 'gender_id', 'gender_id');
     }
-}
+    public function getProfileImageAttribute($value)
+    {
+        return asset('storage/img/gym_staff/' . $value);
+    }
+}    

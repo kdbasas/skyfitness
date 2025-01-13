@@ -19,6 +19,8 @@ use Rawilk\Printing\Receipts\ReceiptPrinter;
 use Rawilk\Printing\Printing;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Dompdf\Options;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -1127,7 +1129,6 @@ public function showStaffManagement(Request $request)
     $gym_staffs = GymStaff::when($search, function ($query, $search) {
         $query->where('first_name', 'like', "%{$search}%")
               ->orWhere('last_name', 'like', "%{$search}%")
-              ->orWhere('username', 'like', "%{$search}%")
               ->orWhere('email', 'like', "%{$search}%");
     })->paginate(10); // Paginate results  
     $genders = Gender::all(); // Make sure to import the Gender model 
@@ -1153,30 +1154,135 @@ public function storeStaff(Request $request)
         'age' => 'required|integer|min:18',
         'contact_number' => 'required|string|max:20',
         'gender_id' => 'required|exists:genders,gender_id',
-        'profile_image' => 'nullable|image|max:2048',
+        'profile_image' => 'required|file|mimes:jpg,jpeg,png|max:2048',
     ]);
 
     try {
         $gym_staff = new GymStaff();
         $gym_staff->fill($request->all());
-        if ($request->hasFile('profile_image')) {
-            $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
-            $gym_staff->profile_image = $imagePath;
-        }
+        
+        $profileImage = $request->file('profile_image');
+        $profileImageFilename = time() . '.' . $profileImage->getClientOriginalExtension();
+        $profileImage->storeAs('public/img/gym_staff', $profileImageFilename);
+        $gym_staff->profile_image = asset('storage/img/gym_staff/' . $profileImageFilename);
+
 
         $gym_staff->password = bcrypt($request->input('password'));
         $gym_staff->save();
 
-        User::create([
-            'name' => $request->input('first_name'),
-            'email' => $request->input('email'),
-            'password' => bcrypt($request->input('password')),
-            'role' => 'gym_staff',
-        ]);
+        // Check if user with same email already exists
+        $user = User::where('email', $request->input('email'))->first();
+        if (!$user) {
+            User::create([
+                'name' => $request->input('first_name'),
+                'email' => $request->input('email'),
+                'password' => bcrypt($request->input('password')),
+                'role' => 'gym_staff',
+            ]);
+        }
 
         return redirect()->route('admin.staff.management')->with('success', 'Staff member registered successfully!');
     } catch (\Exception $e) {
         return back()->withErrors('Failed to register staff. Please try again.');
+    }
+}
+
+public function updateStaff(Request $request, $id)
+{
+    // Ensure $id is gymstaff_id
+    $gym_staff = GymStaff::findOrFail($id); // Assuming $id is gymstaff_id
+
+    $request->validate([
+        'email' => [
+        'required',
+        'email',
+        Rule::unique('gym_staffs')->ignore($gym_staff->gymstaff_id, 'gymstaff_id'),
+    ],
+
+        'first_name' => 'required|string|max:255',
+        'middle_name' => 'nullable|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'suffix_name' => 'nullable|string|max:55',
+        'age' => 'required|integer|min:18',
+        'contact_number' => 'required|string|max:20',
+        'gender_id' => 'required|exists:genders,gender_id',
+        'profile_image' => 'nullable|image|max:2048',
+    ]);
+
+    try {
+        $gym_staff->fill($request->except(['profile_image', 'email']));
+
+        // Update profile image if provided
+        if ($request->hasFile('profile_image')) {
+            // Delete old image
+            if ($gym_staff->profile_image && Storage::exists('public/' . $gym_staff->profile_image)) {
+                Storage::delete('public/' . $gym_staff->profile_image);
+            }
+
+            $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
+            $gym_staff->profile_image = $imagePath;
+        }
+
+        // Update email only if changed
+        if ($gym_staff->email !== $request->input('email')) {
+            // Check if new email already exists
+            $user = User::where('email', $request->input('email'))->first();
+            if ($user) {
+                return back()->withErrors('Email already exists.');
+            }
+
+            $gym_staff->email = $request->input('email');
+            $user = User::where('email', $gym_staff->getOriginal('email'))->first();
+            if ($user) {
+                $user->email = $request->input('email');
+                $user->save();
+            }
+        }
+
+        $gym_staff->save();
+
+        return redirect()->route('admin.staff.management')->with('success', 'Staff member updated successfully!');
+    } catch (\Exception $e) {
+        return back()->withErrors('Failed to update staff. Please try again.');
+    }
+}
+
+
+public function deleteStaff($id)
+{
+    try {
+        $gym_staff = GymStaff::findOrFail($id);
+
+        // Delete associated user record
+        $user = User::where('email', $gym_staff->email)->first();
+        if ($user) {
+            $user->delete();
+        } else {
+            Log::error('User not found when trying to delete staff member ' . $id);
+            return back()->withErrors('Failed to delete staff. Please try again.');
+        }
+
+        // Delete profile image if exists
+        if ($gym_staff->profile_image && Storage::exists('public/' . $gym_staff->profile_image)) {
+            try {
+                Storage::delete('public/' . $gym_staff->profile_image);
+            } catch (\Exception $e) {
+                Log::error('Failed to delete profile image when trying to delete staff member ' . $id . ': ' . $e->getMessage());
+                return back()->withErrors('Failed to delete staff. Please try again.');
+            }
+        }
+
+        try {
+            $gym_staff->delete();
+        } catch (\Exception $e) {
+            Log::error('Failed to delete staff member ' . $id . ': ' . $e->getMessage());
+            return back()->withErrors('Failed to delete staff. Please try again.');
+        }
+
+        return redirect()->route('admin.staff.management')->with('success', 'Staff member deleted successfully!');
+    } catch (\Exception $e) {
+        Log::error('Failed to delete staff member ' . $id . ': ' . $e->getMessage());
+        return back()->withErrors('Failed to delete staff. Please try again.');
     }
 }
 }
