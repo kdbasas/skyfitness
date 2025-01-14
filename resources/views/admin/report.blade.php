@@ -52,61 +52,6 @@
                     <p class="text-2xl">${{ number_format($totalRevenue ?? 0, 2) }}</p>
                 </div>
             </div>
-
-            <!-- Age Trend Analysis -->
-            @if(isset($ageTrend))
-                <h3 class="text-xl font-semibold mb-2">Age Trend Analysis</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    @foreach($ageTrend as $age => $count)
-                        <div class="bg-orange-600 text-white p-6 rounded-lg shadow-lg">
-                            <h4 class="text-lg font-semibold">{{ $age }} years old</h4>
-                            <p class="text-2xl">{{ $count }} members</p>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
-            <!-- Membership Types -->
-            @if(isset($studentMembers) && isset($regularMembers))
-                <h3 class="text-xl font-semibold mb-2">Membership Types</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div class="bg-purple-600 text-white p-6 rounded-lg shadow-lg">
-                        <h4 class="text-lg font-semibold">Student Members</h4>
-                        <p class="text-2xl">{{ $studentMembers ?? 0 }} ({{ number_format($studentMembersPercentage ?? 0, 2) }}%)</p>
-                    </div>
-                    <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
-                        <h4 class="text-lg font-semibold">Regular Members</h4>
-                        <p class="text-2xl">{{ $regularMembers ?? 0 }} ({{ number_format($regularMembersPercentage ?? 0, 2) }}%)</p>
-                    </div>
-                </div>
-            @endif
-
-            <!-- Revenue by Month -->
-            @if(isset($revenueByMonth))
-                <h3 class="text-xl font-semibold mb-2">Revenue by Month</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    @foreach($revenueByMonth as $month => $revenue)
-                        <div class="bg-teal-600 text-white p-6 rounded-lg shadow-lg">
-                            <h4 class="text-lg font-semibold">{{ $month }}</h4>
-                            <p class="text-2xl">${{ number_format($revenue, 2) }}</p>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
-            <!-- Top 5 Most Popular Subscriptions -->
-            @if(isset($topSubscriptions))
-                <h3 class="text-xl font-semibold mb-2">Top 5 Most Popular Subscriptions</h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    @foreach($topSubscriptions as $subscription)
-                        <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
-                            <h4 class="text-lg font-semibold">{{ $subscription->subscription_name }}</h4>
-                            <p class="text-2xl">{{ $subscription->members_count }} members</p>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
             <form method="GET" action="{{ route('admin.printReport') }}">
                 <input type="hidden" name="month" value="{{ $selectedMonth ?? Carbon::now()->format('Y-m') }}">
                 <button type="submit" class="bg-green-500 text-white rounded px-4 py-2 hover:bg-green-600">Print Report</button>

@@ -185,39 +185,12 @@ public function reportAnalytics(Request $request)
         ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
         ->get();
 
-    $ageTrend = [];
-    foreach ($members as $member) {
-        $age = Carbon::parse($member->birthdate)->age;
-        if (isset($ageTrend[$age])) {
-            $ageTrend[$age]++;
-        } else {
-            $ageTrend[$age] = 1;
-        }
-    }
 
     // Fetch total revenue for the selected month
     $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
         ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
         ->sum('amount');
 
-    // Fetch student and regular members for the selected month
-    $studentMembers = Member::where('promo', 'Student')
-        ->whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-        ->count();
-    $regularMembers = Member::where('promo', 'Regular')
-        ->whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-        ->count();
-
-    // Calculate percentages
-    if ($memberRegistrations > 0) {
-        $studentMembersPercentage = ($studentMembers / $memberRegistrations) * 100;
-        $regularMembersPercentage = ($regularMembers / $memberRegistrations) * 100;
-    } else {
-        $studentMembersPercentage = 0;
-        $regularMembersPercentage = 0;
-    }
 
     // Fetch revenue by month for the entire year
     $revenueByMonth = [];
@@ -229,25 +202,13 @@ public function reportAnalytics(Request $request)
         $revenueByMonth[$month] = $revenue;
     }
 
-    // Fetch top subscriptions
-    $topSubscriptions = Subscription::withCount('members')
-        ->orderBy('members_count', 'desc')
-        ->take(5)
-        ->get();
-
-    return view('admin.report', compact(
-        'selectedMonth',
-        'memberRegistrations',
-        'ageTrend',
-        'totalRevenue',
-        'studentMembers',
-        'regularMembers',
-        'studentMembersPercentage',
-        'regularMembersPercentage',
-        'revenueByMonth',
-        'topSubscriptions'
-    ));
-}
+        return view('admin.report', compact(
+            'selectedMonth',
+            'memberRegistrations',
+            'totalRevenue',
+            'revenueByMonth',
+        ));
+    }
 
 
 public function printReport(Request $request)
@@ -267,30 +228,6 @@ public function printReport(Request $request)
     return view('admin.report_pdf', compact('memberRegistrations', 'totalRevenue', 'selectedMonth'));
 }
 
-
-public function markAllAsRead()
-{
-    Notification::where('is_read', false)->update(['is_read' => true]);
-
-    return response()->json(['success' => true]);
-}
-
-public function markAsRead(Request $request)
-{
-    $notification = Notification::findOrFail($request->notification_id);
-    $notification->update(['is_read' => true]);
-
-    // Optionally return updated unread count
-    $unreadCount = Notification::where('is_read', false)->count();
-    return response()->json(['success' => true, 'count' => $unreadCount]);
-}
-
-public function getUnreadNotificationCount()
-{
-    $unreadCount = Notification::where('is_read', false)->count();
-
-    return response()->json(['count' => $unreadCount]);
-}
 
     // Show Admin Profile
     public function showProfile()
