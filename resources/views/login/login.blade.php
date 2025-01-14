@@ -36,7 +36,12 @@
             
             <!-- Attendance Button -->
             <div class="mt-6 text-center">
-                <a href="{{ route('member.attendance.show') }}" class="attendance-button">Attendance</a>
+                <a href="{{ route('member.attendance.show') }}" class="attendance-button">
+                    <span class="attendance-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </span>
+                    <span class="attendance-text">Mark Attendance</span>
+                </a>
             </div>       
         </div>
     </div>
@@ -103,18 +108,27 @@
     .attendance-button {
         display: inline-block;
         padding: 15px 30px;
-        background-color: #0C0B25;
+        background-color: #008132;
         color: #fff;
         font-size: 1.125rem; /* Larger text size */
         font-weight: bold;
         text-transform: uppercase;
-        border-radius: 30px; /* Rounded button */
+        border-radius: 50px; /* Rounded button */
         transition: background-color 0.3s ease;
     }
 
     .attendance-button:hover {
-        background-color: #343434; /* Darken button color on hover */
+        background-color: #00657e; /* Darken button color on hover */
         text-decoration: none; /* Remove underline on hover */
+    }
+
+    .attendance-icon {
+        font-size: 20px; /* Increase icon size */
+        margin-right: 8px; /* Add some space between icon and text */
+    }
+
+    .attendance-text {
+        vertical-align: middle; /* Align text vertically with icon */
     }
 </style>
 @endpush

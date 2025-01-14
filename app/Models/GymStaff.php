@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable; 
 
 class GymStaff extends Authenticatable 
 {
-    use HasFactory;
+    use HasFactory, Notifiable;
 
     protected $table = 'gym_staffs'; 
     protected $primaryKey = 'gymstaff_id';// Specify the table name if it's not the plural form of the model name
@@ -43,4 +44,8 @@ public function gender()
     {
         return asset('storage/img/gym_staff/' . $value);
     }
-}    
+    public function notifications()
+    {
+        return $this->morphMany(Notification::class, 'notifiable');
+    }
+}

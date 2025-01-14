@@ -59,14 +59,14 @@ Route::group(['middleware' => ['auth', 'admin', \App\Http\Middleware\PreventBack
     Route::get('/admin/reports', [AdminController::class, 'showReports'])->name('admin.reports');
     Route::post('/admin/attendance/record', [AdminController::class, 'recordAttendance'])->name('admin.recordAttendance');
     Route::get('/admin/attendance/view/{member_id}', [AdminController::class, 'viewAttendance'])->name('admin.attendance.view');
-
     Route::post('/admin/attendance/checkout', [AdminController::class, 'checkOut'])->name('admin.checkOut');
     Route::get('/admin/attendance', [AdminController::class, 'showAttendance'])->name('admin.attendance');
     Route::get('/attendance/pdf', [AdminController::class, 'generatePdf'])->name('attendance.pdf');
     Route::get('/subscription/{id}', [AdminController::class, 'showValidity']);
-    Route::post('/notifications/mark-all-as-read', [AdminController::class, 'markAllNotificationsAsRead'])
-    ->name('notifications.markAllAsRead');
-    Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadCount']);
+    Route::get('/notifications', [AdminController::class, 'getNotifications']);
+    Route::post('/notifications/mark-all-as-read', [AdminController::class, 'markAllAsRead']);
+    Route::post('/notifications/mark-as-read', [AdminController::class, 'markAsRead']);
+    Route::get('/notifications/unread-count', [AdminController::class, 'getUnreadNotificationCount']);
     Route::get('print-receipt/{member_id}', [AdminController::class, 'printReceipt'])->name('admin.print.receipt');
     Route::post('/admin/member/renew/{id}', [AdminController::class, 'renew'])->name('admin.member.renew');
     Route::get('/admin/payment-history', [AdminController::class, 'showPaymentHistory'])->name('admin.payment.history');

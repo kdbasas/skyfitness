@@ -56,6 +56,16 @@
                     <p class="text-gray-600">Equipment Available: <span class="font-bold">{{ $equipmentAvailable }}</span></p>
                 </div>
             </div>
+
+            <!-- Expiring Members -->
+            <div class="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-orange-500">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">Expiring Members (5 days)</h2>
+                <ul>
+                    @foreach($expiringMembers as $member)
+                        <li class="flex justify-between py-2 border-b border-gray-200">{{ $member->first_name }} {{ $member->last_name }} <span class="font-semibold text-orange-500">Expires in {{ $member->days_until_expiration }} days</span></li>
+                    @endforeach
+                </ul>
+            </div>
         </div>
 
         <!-- Growth Graph Section -->

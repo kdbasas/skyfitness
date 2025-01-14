@@ -48,4 +48,8 @@ class User extends Authenticatable
     {
         return $this->role === 'gym_staff';
     }
+    public function notifications()
+    {
+        return $this->morphMany(Notification::class, 'notifiable');
+    }
 }

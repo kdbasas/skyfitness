@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\GymStaff;
+use App\Models\Notification;
 use App\Models\Gender; 
 use App\Models\User;
 use App\Models\Subscription;
@@ -30,7 +32,6 @@ use App\Helpers\QrCodeGenerator;
 
 class AdminController extends Controller
 {
-    // Show Admin Dashboard
     public function dashboard()
     {
         $admin = Auth::user();
@@ -38,127 +39,123 @@ class AdminController extends Controller
 
         // Generate a welcome notification if this is the first login after session start
         if (Session::has('just_logged_in')) {
-            $notifications[] = [
-                'message' => "Welcome, {$admin->name}!",
-                'type' => 'info',
-            ];
-
+            $this->createNotification($admin->id, "Welcome, {$admin->name}!", 'info');
             Session::forget('just_logged_in'); // Reset login notification
         }
 
-        // Subscription Expiry Notification (5 days before expiry)
-    $expiringMembers = Member::whereDate('date_expired', '<=', Carbon::now()->addDays(5))->get();
-    foreach ($expiringMembers as $member) {
-        $notifications[] = [
-            'message' => "Subscription for {$member->first_name} {$member->last_name} is expiring in 5 days!",
-            'type' => 'warning',
-        ];
-    }
-     // Update expired members' status
-     $expiredMembers = Member::whereDate('date_expired', '<=', Carbon::now())->get();
-     foreach ($expiredMembers as $member) {
-         $member->status = 'inactive';
-         $member->save();
-     }
- 
-      // Fetch active members
-    $activeMembers = Member::where('status', 'active')->get();
-
-    // Fetch total equipment
-    $totalEquipment = Equipment::count();
-
-    // Fetch equipment in use
-    $equipmentInUse = Equipment::where('status', 'inactive')->count();
-
-    // Fetch equipment available
-    $equipmentAvailable = Equipment::where('status', 'active')->count();
-
-    // Calculate total revenue for the current month
-    $currentMonth = Carbon::now()->format('Y-m'); // Define $currentMonth here
-    $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($currentMonth)->year)
-                           ->whereMonth('date_paid', Carbon::parse($currentMonth)->month)
-                           ->sum('amount');
-
-    // Fetch student and regular members for the selected month
-    $studentMembers = Member::where('promo', 'Student')
-                             ->whereYear('date_joined', Carbon::parse($currentMonth)->year)
-                             ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
-                             ->count();
-    $regularMembers = Member::where('promo', 'Regular')
-                             ->whereYear('date_joined', Carbon::parse($currentMonth)->year)
-                             ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
-                             ->count();
-
-    // Calculate percentages
-    if (count($activeMembers) > 0) {
-        $studentMembersPercentage = ($studentMembers / count($activeMembers)) * 100;
-        $regularMembersPercentage = ($regularMembers / count($activeMembers)) * 100;
-    } else {
-        $studentMembersPercentage = 0;
-        $regularMembersPercentage = 0;
-    }
-
-    // Fetch revenue by month for the entire year
-    $revenueByMonth = [];
-    for ($i = 1; $i <= 12; $i++) {
-        $month = Carbon::parse($currentMonth)->year . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
-        $revenue = Payment::whereMonth('date_paid', $i)
-                          ->whereYear('date_paid', Carbon::parse($currentMonth)->year)
-                          ->sum('amount');
-        $revenueByMonth[$month] = $revenue;
-    }
-
-    // Fetch top subscriptions
-    $topSubscriptions = Subscription::withCount('members')
-                                     ->orderBy('members_count', 'desc')
-                                     ->take(5)
-                                     ->get();
-    // Fetch monthly registrations for growth graph
-    $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
-        ->groupBy('month')
-        ->orderBy('month')
-        ->get();
-
-    // Prepare data for the growth graph
-    $months = [];
-    $registrationCounts = [];
-    foreach ($monthlyRegistrations as $registration) {
-        $months[] = $registration->month;
-        $registrationCounts[] = $registration->count;
-    }
-
-    $ageTrend = [];
-    $members = Member::whereYear('date_joined', Carbon::parse($currentMonth)->year)
-                      ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
-                      ->get();
-    foreach ($members as $member) {
-        $age = Carbon::parse($member->birthdate)->age;
-        if (isset($ageTrend[$age])) {
-            $ageTrend[$age]++;
-        } else {
-            $ageTrend[$age] = 1;
+        // Update expired members' status
+        $expiredMembers = Member::whereDate('date_expired', '<=', Carbon::now())->get();
+        foreach ($expiredMembers as $member) {
+            $member->status = 'inactive';
+            $member->save();
         }
+
+        // Fetch active members
+        $activeMembers = Member::where('status', 'active')->get();
+
+        // Fetch total equipment
+        $totalEquipment = Equipment::count();
+
+        // Fetch equipment in use
+        $equipmentInUse = Equipment::where('status', 'inactive')->count();
+
+        // Fetch equipment available
+        $equipmentAvailable = Equipment::where('status', 'active')->count();
+        $expiringMembers = Member::whereDate('date_expired', now()->addDays(5))->get();
+
+        $expiringMembers->transform(function ($member) {
+            $member->days_until_expiration = 5;
+            return $member;
+        });        
+        // Calculate total revenue for the current month
+        $currentMonth = Carbon::now()->format('Y-m'); // Define $currentMonth here
+        $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($currentMonth)->year)
+                               ->whereMonth('date_paid', Carbon::parse($currentMonth)->month)
+                               ->sum('amount');
+
+        // Fetch student and regular members for the selected month
+        $studentMembers = Member::where('promo', 'Student')
+                                 ->whereYear('date_joined', Carbon::parse($currentMonth)->year)
+                                 ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
+                                 ->count();
+        $regularMembers = Member::where('promo', 'Regular')
+                                 ->whereYear('date_joined', Carbon::parse($currentMonth)->year)
+                                 ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
+                                 ->count();
+
+        // Calculate percentages
+        if ($activeMembers->count() > 0) {
+            $studentMembersPercentage = ($studentMembers / $activeMembers->count()) * 100;
+            $regularMembersPercentage = ($regularMembers / $activeMembers->count()) * 100;
+        } else {
+            $studentMembersPercentage = 0;
+            $regularMembersPercentage = 0;
+        }
+
+        // Fetch revenue by month for the entire year
+        $revenueByMonth = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $month = Carbon::parse($currentMonth)->year . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
+            $revenue = Payment::whereMonth('date_paid', $i)
+                              ->whereYear('date_paid', Carbon::parse($currentMonth)->year)
+                              ->sum('amount');
+            $revenueByMonth[$month] = $revenue;
+        }
+
+        // Fetch top subscriptions
+        $topSubscriptions = Subscription::withCount('members')
+                                         ->orderBy('members_count', 'desc')
+                                         ->take(5)
+                                         ->get();
+
+        // Fetch monthly registrations for growth graph
+        $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
+            ->groupBy('month')
+            ->orderBy('month')
+            ->get();
+
+        // Prepare data for the growth graph
+        $months = [];
+        $registrationCounts = [];
+        foreach ($monthlyRegistrations as $registration ) {
+            $months[] = $registration->month;
+            $registrationCounts[] = $registration->count;
+        }
+
+        $ageTrend = [];
+        $members = Member::whereYear('date_joined', Carbon::parse($currentMonth)->year)
+                          ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
+                          ->get();
+        foreach ($members as $member) {
+            $age = Carbon::parse($member->birthdate)->age;
+            if (isset($ageTrend[$age])) {
+                $ageTrend[$age]++;
+            } else {
+                $ageTrend[$age] = 1;
+            }
+        }
+
+        return view('admin.dashboard', compact(
+            'notifications',
+            'activeMembers',
+            'expiredMembers',
+            'expiringMembers',
+            'totalEquipment',
+            'equipmentInUse',
+            'equipmentAvailable',
+            'totalRevenue',
+            'studentMembers',
+            'regularMembers',
+            'studentMembersPercentage',
+            'regularMembersPercentage',
+            'revenueByMonth',
+            'topSubscriptions',
+            'ageTrend',
+            'months', // Pass months to the view
+            'registrationCounts' // Pass registration counts to the view
+        ));
     }
 
-    return view('admin.dashboard', compact(
-        'notifications',
-        'activeMembers',
-        'expiredMembers',
-        'totalEquipment',
-        'equipmentInUse',
-        'equipmentAvailable',
-        'totalRevenue',
-        'studentMembers',
-        'regularMembers',
-        'studentMembersPercentage',
-        'regularMembersPercentage',
-        'revenueByMonth',
-        'topSubscriptions',
-        'ageTrend',
-        'months', // Pass months to the view
-        'registrationCounts' // Pass $currentMonth to the view
-    ));
-}
     public function showReports(Request $request)
 {
     $selectedMonth = $request->input('month', Carbon::now()->format('Y-m')); // Default to current month
@@ -271,32 +268,28 @@ public function printReport(Request $request)
 }
 
 
-public function markAllNotificationsAsRead()
+public function markAllAsRead()
 {
-    try {
-        $user = auth()->user();
+    Notification::where('is_read', false)->update(['is_read' => true]);
 
-        // Mark all notifications as read
-        $user->unreadNotifications->markAsRead();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notifications marked as read.',
-            'count' => $user->unreadNotifications()->count() // Return the updated unread count
-        ]);
-    } catch (\Exception $e) {
-        Log::error($e); // Log the exception
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to mark notifications as read.',
-            'error' => $e->getMessage()
-        ], 500);
-    }
+    return response()->json(['success' => true]);
 }
-public function getUnreadCount()
+
+public function markAsRead(Request $request)
 {
-    $count = auth()->user()->unreadNotifications()->count();
-    return response()->json(['count' => $count]);
+    $notification = Notification::findOrFail($request->notification_id);
+    $notification->update(['is_read' => true]);
+
+    // Optionally return updated unread count
+    $unreadCount = Notification::where('is_read', false)->count();
+    return response()->json(['success' => true, 'count' => $unreadCount]);
+}
+
+public function getUnreadNotificationCount()
+{
+    $unreadCount = Notification::where('is_read', false)->count();
+
+    return response()->json(['count' => $unreadCount]);
 }
 
     // Show Admin Profile
