@@ -158,7 +158,7 @@ class AdminController extends Controller
 
     public function showReports(Request $request)
 {
-    $selectedMonth = $request->input('month', Carbon::now()->format('Y-m')); // Default to current month
+    $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
     $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
                                   ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
                                   ->count();
@@ -174,6 +174,7 @@ class AdminController extends Controller
 public function reportAnalytics(Request $request)
 {
     $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
+    $totalRevenue = 0; 
 
     // Fetch member registration data for the selected month
     $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
@@ -186,22 +187,13 @@ public function reportAnalytics(Request $request)
         ->get();
 
 
-    // Fetch total revenue for the selected month
-    $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
-        ->sum('amount');
-
-
-    // Fetch revenue by month for the entire year
-    $revenueByMonth = [];
-    for ($i = 1; $i <= 12; $i++) {
-        $month = Carbon::parse($selectedMonth)->year . '-' . str_pad($i, 2, '0', STR_PAD_LEFT);
-        $revenue = Payment::whereMonth('date_paid', $i)
-            ->whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-            ->sum('amount');
-        $revenueByMonth[$month] = $revenue;
+         // Fetch total revenue for the selected month
+    if ($request->has('month')) {
+        $totalRevenue = Payment::join('members', 'payments.member_id', '=', 'members.member_id')
+            ->whereYear('members.date_joined', Carbon::parse($selectedMonth)->year)
+            ->whereMonth('members.date_joined', Carbon::parse($selectedMonth)->month)
+            ->sum('payments.amount');
     }
-    
     // Fetch monthly registrations for graph growth
     $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
         ->groupBy('month')
@@ -231,7 +223,6 @@ public function reportAnalytics(Request $request)
         'selectedMonth',
         'memberRegistrations',
         'totalRevenue',
-        'revenueByMonth',
         'months',
         'registrationCounts',
         'promoLabels',
@@ -846,6 +837,7 @@ public function downloadReportEquipment(Request $request)
         return redirect()->back()->with('error', 'There was an issue adding the member.');
     }
 }
+
 public function calculateAmount(Request $request)
 {
     $request->validate([
@@ -1081,17 +1073,17 @@ public function showValidity($id)
     $subscription = Subscription::findOrFail($id);
     return response()->json(['validity' => $subscription->validity]);
 }
-    public function printReceipt($member_id)
+public function printReceipt($memberId)
 {
-    $member = Member::find($member_id);
+    $member = Member::find($memberId);
 
     if ($member) {
-        $pdf = Pdf::loadView('admin.receipt_pdf', compact('member'));
-        return $pdf->download("receipt_{$member->first_name}_{$member->last_name}.pdf");
+        return view('admin.receipt_pdf', compact('member'));
     }
 
     return redirect()->back()->with('error', 'Member not found.');
 }
+
 
 public function showStaffManagement(Request $request)
 {
@@ -1126,18 +1118,12 @@ public function storeStaff(Request $request)
         'age' => 'required|integer|min:18',
         'contact_number' => 'required|string|max:20',
         'gender_id' => 'required|exists:genders,gender_id',
-        'profile_image' => 'required|file|mimes:jpg,jpeg,png|max:2048',
     ]);
 
     try {
         $gym_staff = new GymStaff();
         $gym_staff->fill($request->all());
         
-        $profileImage = $request->file('profile_image');
-        $profileImageFilename = time() . '.' . $profileImage->getClientOriginalExtension();
-        $profileImage->storeAs('public/img/gym_staff', $profileImageFilename);
-        $gym_staff->profile_image = $profileImageFilename;
-
         $gym_staff->password = bcrypt($request->input('password'));
         $gym_staff->save();
 
@@ -1177,25 +1163,11 @@ public function updateStaff(Request $request, $id)
         'age' => 'required|integer|min:18',
         'contact_number' => 'required|string|max:20',
         'gender_id' => 'required|exists:genders,gender_id',
-        'profile_image' => 'nullable|image|max:2048',
     ]);
 
     try {
         $gym_staff->fill($request->except(['profile_image', 'email']));
 
-        // Update profile image if provided
-       // Update profile image if provided
-    if ($request->hasFile('profile_image')) {
-        // Delete old image
-        if ($gym_staff->profile_image && Storage::exists('public/' . $gym_staff->profile_image)) {
-            Storage::delete('public/' . $gym_staff->profile_image);
-        }
-
-        $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
-        $gym_staff->profile_image = 'img/gym_staff/' . basename($imagePath);
-    }
-
-        // Update email only if changed
         if ($gym_staff->email !== $request->input('email')) {
             // Check if new email already exists
             $user = User::where('email', $request->input('email'))->first();

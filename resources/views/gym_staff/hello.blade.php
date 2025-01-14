@@ -182,3 +182,127 @@ document.getElementById('delete-popup').classList.add('hidden');
 }
 </script>
 @endsection
+
+
+
+
+
+@extends('layouts.layout')
+@section('content')
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        #printable, #printable * {
+            visibility: visible;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        #printable {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 3in !important;
+            height: 3in !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 0.1in !important;
+        }
+
+        @page {
+            size: 3in 3in;
+            margin: 0;
+        }
+
+        .header {
+            font-size: 12px !important;
+            line-height: 1 !important;
+            margin-bottom: 0.1in !important;
+        }
+
+        .subtitle {
+            font-size: 8px !important;
+            line-height: 1 !important;
+            margin-bottom: 0.1in !important;
+        }
+
+        .qr-container {
+            transform: scale(0.9) !important;
+            margin: 0.1in 0 !important;
+        }
+
+        .asset-id {
+            font-size: 10px !important;
+            line-height: 1 !important;
+            padding: 0.05in !important;
+        }
+
+        .no-print {
+            display: none !important;
+        }
+    }
+
+    /* Screen styles */
+    .min-h-screen {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgb(241 245 249);
+        padding: 1rem;
+    }
+
+    .bg-white {
+        background: white;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        max-width: 32rem;
+        width: 100%;
+        box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    }
+</style>
+
+<div class="min-h-screen">
+    <div class="bg-white">
+        <div id="printable">
+            <h2 class="header font-bold text-gray-800">FILAMER CHRISTIAN UNIVERSITY INC.</h2>
+            <p class="subtitle text-gray-500">Asset Management System</p>
+            
+            <div class="qr-container">
+                {{ $qrCode }}
+            </div>
+
+            <div class="asset-id">
+                <span class="font-mono bg-gray-50 rounded-lg">{{ $asset->asset_tag_id }}</span>
+            </div>
+        </div>
+
+        <div class="flex justify-between mt-8 gap-4 no-print">
+            <button onclick="window.history.back()"
+                class="flex items-center gap-2 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                </svg>
+                Back
+            </button>
+            
+            <button onclick="window.print()"
+                class="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                    stroke="currentColor" class="w-5 h-5">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                </svg>
+                Print
+            </button>
+        </div>
+    </div>
+</div>
+@endsection

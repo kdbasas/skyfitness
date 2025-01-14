@@ -60,7 +60,6 @@
             <tr class="bg-[#1A1363] text-white text-left">
                 <th class="px-6 py-3">Subscription Name</th>
                 <th class="px-6 py-3">Validity (Months)</th>
-                <th class="px-6 py-3">Amount</th>
                 <th class="px-6 py-3 text-center">Actions</th>
             </tr>
         </thead>
@@ -69,7 +68,6 @@
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 border-b">{{ $subscription->subscription_name }}</td>
                     <td class="px-6 py-4 border-b">{{ $subscription->validity }}</td>
-                    <td class="px-6 py-4 border-b">₱{{ number_format($subscription->amount, 2) }}</td>
                     <td class="px-6 py-4 border-b text-center">
                         <button 
                             onclick="openEditPopup({{ $subscription->subscription_id }}, '{{ $subscription->subscription_name }}', {{ $subscription->validity }}, {{ $subscription->amount }})" 

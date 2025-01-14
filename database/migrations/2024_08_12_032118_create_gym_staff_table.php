@@ -19,7 +19,7 @@ class CreateGymStaffTable extends Migration
             $table->integer('age');
             $table->string('contact_number');
             $table->unsignedBigInteger('gender_id');
-            $table->string('profile_image')->nullable();
+            //$table->string('profile_image')->nullable();
             $table->timestamps();
         });
     }

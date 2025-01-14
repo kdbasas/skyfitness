@@ -79,12 +79,6 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="flex flex-col">
-                            <label for="profile_image" class="text-sm font-medium text-black">Profile Image</label>
-                            <input type="file" id="profile_image" name="profile_image" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363] p-2" accept="image/*">
-                        </div>
-                    </div>
-                    
                     <div class="flex justify-between mt-6">
                         <button type="submit" class="bg-[#1A1363] text-white font-bold py-2 px-4 rounded-lg hover:bg-[#0f0c5c] transition duration-300 ease-in-out">Register</button>
                         <button type="reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500">Cancel</button>
@@ -114,7 +108,6 @@
                             <th class="px-6 py-3 text-left">Age</th>
                             <th class="px-6 py-3 text-left">Gender</th>
                             <th class="px-6 py-3 text-left">Role</th>
-                            <th class="px-6 py-3 text-left">Staff Picture</th>
                             <th class="px-6 py-3 text-center">Actions</th>
                         </tr>
                     </thead>
@@ -127,10 +120,7 @@
                                 <td class="px-6 py-4 border-b">{{ $staffMember->contact_number }}</td>
                                 <td class="px-6 py-4 border-b">{{ $staffMember->age }}</td>
                                 <td class="px-6 py-4 border-b">{{ $staffMember->gender->name}}</td>
-                                <td class="px-6 py-4 border-b">{{ $staffMember->role }}</td>
-                                <td class="px-6 py-4 border-b text-center">
-                                    <img src="{{ asset('img/gym_staff/' . $staffMember->profile_image) }}" alt="Profile Image" class="w-16 h-16 mx-auto">
-                                </td>                                                                                
+                                <td class="px-6 py-4 border-b">{{ $staffMember->role }}</td>                                                                           
                                 <td class="px-6 py-4 border-b text-center">
                                     <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600" onclick="openEditModal({{ $staffMember->gymstaff_id }}, '{{ $staffMember->first_name }}', '{{ $staffMember->last_name }}', '{{ $staffMember->email }}', '{{ $staffMember->contact_number }}', {{ $staffMember->age }}, {{ $staffMember->gender_id }})">Edit</button>
                                     <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600" onclick="openDeleteModal({{ $staffMember->gymstaff_id }})">Delete</button>
@@ -193,13 +183,6 @@
                 <label for="editContactNumber" class="block text-sm font-medium">Contact Number</label>
                 <input type="text" id="editContactNumber" name="contact_number" class="form-input w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" required>
             </div>
-
-            <!-- Staff Picture -->
-            <div class="mb-4">
-                <label for="editProfileImage" class="block text-sm font-medium">Staff Picture</label>
-                <input type="file" id="editProfileImage" name="profile_image" class="form-input w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" accept="image/*">
-            </div>
-
             <div class="flex justify-end mt-4">
                 <button type="button" class="bg-gray-400 text-white px-4 py-2 rounded-lg mr-2" onclick="closeModal('editModal')">Cancel</button>
                 <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg">Save</button>
@@ -234,7 +217,6 @@
     document.getElementById('editAge').value = age;
     document.getElementById('editGenderId').value = gender_id;
     // Reset the profile picture input since the file cannot be preloaded
-    document.getElementById('editProfileImage').value = '';
 
     // Set the form action
     document.getElementById('editForm').action = `/admin/staff-management/update/${gymstaff_id}`;

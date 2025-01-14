@@ -118,7 +118,9 @@
         <thead>
             <tr class="bg-[#1A1363] text-white">
                 <th class="px-6 py-3 text-left">First Name</th>
+                <th class="px-6 py-3 text-left">Middle Name</th>
                 <th class="px-6 py-3 text-left">Last Name</th>
+                <th class="px-6 py-3 text-left">Suffix Name</th>
                 <th class="px-6 py-3 text-left">Subscription</th>
                 <th class="px-6 py-3 text-left">Contact Number</th>
                 <th class="px-6 py-3 text-left">Date Joined</th>
@@ -135,7 +137,9 @@
             @forelse($members as $member)
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 border-b">{{ $member->first_name }}</td>
+                    <td class="px-6 py-4 border-b">{{ $member->middle_name }}</td>
                     <td class="px-6 py-4 border-b">{{ $member->last_name }}</td>
+                    <td class="px-6 py-4 border-b">{{ $member->suffix_name }}</td>
                     <td class="px-6 py-4 border-b">{{ $member->subscription->subscription_name }}</td>
                     <td class="px-6 py-4 border-b">{{ $member->contact_number }}</td>
                     <td class="px-6 py-4 border-b">{{ \Carbon\Carbon::parse($member->date_joined)->format('M d, Y') }}</td>
@@ -146,6 +150,10 @@
                     </td>
                     <td class="px-6 py-4 border-b text-center">
                         <img src="{{ asset('storage/img/id_attachments/' . $member->id_attachment) }}" alt="ID Attachment" class="w-16 h-16 mx-auto">
+                        <br>
+                        <a href="{{ asset('storage/img/id_attachments/' . $member->id_attachment) }}" download class="text-blue-500 hover:underline text-sm">
+                            Download ID Attachment
+                        </a>
                     </td>
                     <td class="px-6 py-4 border-b">{{ $member->promo == 'Student' ? 'Student' : 'Regular' }}</td>
                     <td class="px-6 py-4 border-b text-right">₱{{ number_format($member->amount, 2) }}</td>
@@ -164,9 +172,9 @@
                         </button>
                     </td>
                     <td class="px-6 py-4 border-b text-center">
-                        <a href="{{ route('admin.print.receipt', $member->member_id) }}" class="text-[#1A1363] hover:underline text-sm">
-                            <i class="fas fa-print"></i> Print
-                        </a>
+                        <button onclick="printReceipt({{ $member->member_id }})" class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                            Print Receipt
+                        </button>
                     </td>
                 </tr>
             @empty
@@ -245,6 +253,17 @@
 </div>
 
 <script>
+        function printReceipt(memberId) {
+    // Open the receipt in a new window
+    var printWindow = window.open(`/print-receipt/${memberId}`, '_blank');
+
+    // Wait for the new window to load
+    printWindow.onload = function() {
+        printWindow.print(); // Trigger the print dialog
+    };
+}
+
+
     function openEditPopup(id, firstName, lastName, subscriptionId, contactNumber, dateJoined) {
         document.getElementById('edit_member_id').value = id;
         document.getElementById('edit_first_name').value = firstName;

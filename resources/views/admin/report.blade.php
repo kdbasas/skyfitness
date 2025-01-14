@@ -47,12 +47,10 @@
                     <h4 class="text-lg font-semibold">Members Registered</h4>
                     <p class="text-2xl">{{ $memberRegistrations ?? 0 }}</p>
                 </div>
-                <div class="bg-green-600 text-white p-6 rounded-lg shadow-lg">
-                    <h4 class="text-lg font-semibold">Total Revenue</h4>
+                <div class="bg-blue-600 text-white p-6 rounded-lg shadow-lg">
+                    <h4 class="text-lg font-semibold">Revenue of The Month:</h4>
                     <p class="text-2xl">${{ number_format($totalRevenue ?? 0, 2) }}</p>
-                </div>
-            </div>
-
+                </div>                                         
             <!-- Graph Growth Section -->
             <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
                 <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Graph Growth</h2>
