@@ -86,6 +86,14 @@ Route::group(['middleware' => ['auth:gym_staff']], function () {
     Route::put('/gym_staff/member/update/{id}', [GymStaffController::class, 'updateMember'])->name('gym_staff.member.update');
     Route::get('/staff/profile', [GymStaffController::class, 'showProfile'])->name('staff.profile');
     Route::post('/staff/profile/update', [GymStaffController::class, 'updateProfile'])->name('staff.profile.update');
+    Route::get('/gym_staff/attendance', [GymStaffController::class, 'showAttendance'])->name('gym_staff.attendance');
+    Route::get('/gym_staff/attendance/view/{member_id}', [GymStaffController::class, 'viewAttendance'])->name('gym_staff.attendance.view');
+    Route::get('/attendance/pdf', [GymStaffController::class, 'generatePdf'])->name('attendance.pdf');
+    Route::get('/gym_staff/payments/{memberId?}', [GymStaffController::class, 'showPaymentForm'])->name('gym_staff.payment.form');
+    Route::post('/gym_staff/payments/add', [GymStaffController::class, 'addPayment'])->name('gym_staff.payment.add');
+    Route::get('gym_staff/payment/edit/{id}', [GymStaffController::class, 'editPayment'])->name('gym_staff.payment.edit');
+    Route::put('gym_staff/payment/update/{id}', [GymStaffController::class, 'updatePayment'])->name('gym_staff.payment.update');
+    Route::delete('/gym_staff/payments/{id}/delete', [GymStaffController::class, 'deletePayment'])->name('gym_staff.payment.delete');
     // Other staff routes...
 });
 Route::get('/attendance', [AttendanceController::class, 'showAttendance'])->name('member.attendance.show');

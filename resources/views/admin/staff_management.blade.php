@@ -129,12 +129,8 @@
                                 <td class="px-6 py-4 border-b">{{ $staffMember->gender->name}}</td>
                                 <td class="px-6 py-4 border-b">{{ $staffMember->role }}</td>
                                 <td class="px-6 py-4 border-b text-center">
-                                    @if($staffMember->profile_image)
-                                        <img src="{{ asset($staffMember->profile_image) }}" alt="Profile Image" class="w-16 h-16 rounded-full">
-                                    @else
-                                        <span>No Image</span>
-                                    @endif
-                                </td>                                                            
+                                    <img src="{{ asset('img/gym_staff/' . $staffMember->profile_image) }}" alt="Profile Image" class="w-16 h-16 mx-auto">
+                                </td>                                                                                
                                 <td class="px-6 py-4 border-b text-center">
                                     <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600" onclick="openEditModal({{ $staffMember->gymstaff_id }}, '{{ $staffMember->first_name }}', '{{ $staffMember->last_name }}', '{{ $staffMember->email }}', '{{ $staffMember->contact_number }}', {{ $staffMember->age }}, {{ $staffMember->gender_id }})">Edit</button>
                                     <button class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600" onclick="openDeleteModal({{ $staffMember->gymstaff_id }})">Delete</button>

@@ -21,7 +21,7 @@
                 <span class="text-base font-medium">Dashboard</span>
             </a>
         </li>
-
+       
         <!-- Member Management -->
         <li>
             <a href="{{ route('gym_staff.member_management') }}" class="sidebar-button {{ request()->routeIs('gym_staff.member_management') ? 'active' : '' }}">
@@ -29,6 +29,20 @@
                 <span class="text-base font-medium">Member Management</span>
             </a>
         </li>
+        <!-- Payment -->
+        <li>
+            <a href="{{ route('gym_staff.payment.form') }}" class="sidebar-button {{ request()->routeIs('admin.payment.form') ? 'active' : '' }}">
+                <i class="fas fa-money-bill-wave text-white text-lg mr-3"></i>
+                <span class="text-base font-medium">Payment</span>
+            </a>
+        </li>
+         <!-- Attendance -->
+         <li>
+            <a href="{{ route('gym_staff.attendance') }}" class="sidebar-button {{ request()->routeIs('gym_staff.attendance') ? 'active' : '' }}">
+                        <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
+                        <span class="text-base font-medium">Attendance</span>
+                    </a>
+                </li>
         <li>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

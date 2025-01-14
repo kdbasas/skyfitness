@@ -201,33 +201,95 @@ public function reportAnalytics(Request $request)
             ->sum('amount');
         $revenueByMonth[$month] = $revenue;
     }
+    
+    // Fetch monthly registrations for graph growth
+    $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get();
 
+    // Prepare data for graph growth
+    $months = [];
+    $registrationCounts = [];
+    foreach ($monthlyRegistrations as $registration) {
+        $months[] = $registration->month;
+        $registrationCounts[] = $registration->count;
+    }
+    $promoTrends = Member::select(DB::raw('promo'), DB::raw('count(*) as count'))
+    ->whereYear('date_joined', Carbon::parse($selectedMonth)->year)
+    ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+    ->groupBy('promo')
+    ->get();
+    // Prepare data for promo trends
+    $promoLabels = [];
+    $promoCounts = [];
+    foreach ($promoTrends as $trend) {
+        $promoLabels[] = $trend->promo;
+        $promoCounts[] = $trend->count;
+    }
         return view('admin.report', compact(
-            'selectedMonth',
-            'memberRegistrations',
-            'totalRevenue',
-            'revenueByMonth',
+        'selectedMonth',
+        'memberRegistrations',
+        'totalRevenue',
+        'revenueByMonth',
+        'months',
+        'registrationCounts',
+        'promoLabels',
+        'promoCounts',
         ));
     }
 
 
-public function printReport(Request $request)
+    public function printReport(Request $request)
 {
     $selectedMonth = $request->input('month');
 
     // Fetch the data needed for the report
     $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-                                  ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-                                  ->count();
+        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+        ->count();
 
     $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-                           ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
-                           ->sum('amount');
+        ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
+        ->sum('amount');
+
+    // Fetch monthly registrations for graph growth
+    $monthlyRegistrations = Member::select(
+            DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'),
+            DB::raw('count(*) as count')
+        )
+        ->groupBy('month')
+        ->orderBy('month')
+        ->get();
+
+    // Prepare data for graph growth
+    $months = [];
+    $registrationCounts = [];
+    foreach ($monthlyRegistrations as $registration) {
+        $months[] = $registration->month;
+        $registrationCounts[] = $registration->count;
+    }
+
+    // Fetch promo trends
+    $promoTrends = Member::select(
+            DB::raw('count(*) as total_members'),
+            DB::raw('sum(case when promo = "Student" then 1 else 0 end) as student_members'),
+            DB::raw('sum(case when promo = "Regular" then 1 else 0 end) as regular_members')
+        )
+        ->whereYear('date_joined', Carbon::parse($selectedMonth)->year)
+        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+        ->first();
 
     // Load the report PDF view
-    return view('admin.report_pdf', compact('memberRegistrations', 'totalRevenue', 'selectedMonth'));
+    return view('admin.report_pdf', compact(
+        'memberRegistrations',
+        'totalRevenue',
+        'selectedMonth',
+        'months',
+        'registrationCounts',
+        'promoTrends'
+    ));
 }
-
 
     // Show Admin Profile
     public function showProfile()
@@ -1019,26 +1081,6 @@ public function showValidity($id)
     $subscription = Subscription::findOrFail($id);
     return response()->json(['validity' => $subscription->validity]);
 }
-public function downloadReport(Request $request)
-{
-    $selectedMonth = $request->input('month');
-
-    // Fetch report data as above
-    $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-                                  ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-                                  ->count();
-
-                                  $totalRevenue = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-                                  ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
-                                  ->sum('amount');
-           
-
-    // Load the report view into PDF
-    $pdf = PDF::loadView('admin.report_pdf', compact('memberRegistrations', 'totalRevenue', 'selectedMonth'));
-
-    // Download the PDF file
-    return $pdf->download('report_analytics_' . $selectedMonth . '.pdf');
-    }
     public function printReceipt($member_id)
 {
     $member = Member::find($member_id);
@@ -1094,7 +1136,7 @@ public function storeStaff(Request $request)
         $profileImage = $request->file('profile_image');
         $profileImageFilename = time() . '.' . $profileImage->getClientOriginalExtension();
         $profileImage->storeAs('public/img/gym_staff', $profileImageFilename);
-        $gym_staff->profile_image = 'img/gym_staff/' . $profileImageFilename;
+        $gym_staff->profile_image = $profileImageFilename;
 
         $gym_staff->password = bcrypt($request->input('password'));
         $gym_staff->save();
@@ -1142,15 +1184,16 @@ public function updateStaff(Request $request, $id)
         $gym_staff->fill($request->except(['profile_image', 'email']));
 
         // Update profile image if provided
-        if ($request->hasFile('profile_image')) {
-            // Delete old image
-            if ($gym_staff->profile_image && Storage::exists('public/' . $gym_staff->profile_image)) {
-                Storage::delete('public/' . $gym_staff->profile_image);
-            }
-
-            $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
-            $gym_staff->profile_image = $imagePath;
+       // Update profile image if provided
+    if ($request->hasFile('profile_image')) {
+        // Delete old image
+        if ($gym_staff->profile_image && Storage::exists('public/' . $gym_staff->profile_image)) {
+            Storage::delete('public/' . $gym_staff->profile_image);
         }
+
+        $imagePath = $request->file('profile_image')->store('img/gym_staff', 'public');
+        $gym_staff->profile_image = 'img/gym_staff/' . basename($imagePath);
+    }
 
         // Update email only if changed
         if ($gym_staff->email !== $request->input('email')) {

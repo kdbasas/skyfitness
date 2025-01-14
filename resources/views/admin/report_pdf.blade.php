@@ -8,54 +8,89 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            padding: 20px;
+            padding: 0;
             background-color: #f9f9f9;
         }
-        h1, h2 {
+        h1, h2, h3 {
             text-align: center;
             color: #1A1363;
-        }
-        .report-container {
-            max-width: 800px;
-            margin: auto;
-            padding: 20px;
-            background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         .logo-container {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 20px;
         }
         .logo-container img {
-            width: 100px; /* Adjust the size as needed */
-            height: auto;
+            max-width: 80px;
+            margin-right: 15px;
         }
-        .summary {
+        .report-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #1A1363;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e0e0e0;
+        }
+        .footer {
             margin-top: 30px;
-            font-size: 18px;
+            text-align: center;
+            font-size: 12px;
+            color: #777;
         }
-        .summary p {
-            margin: 10px 0;
+        .print-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #1A1363;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 16px;
+        }
+        .print-btn:hover {
+            background-color: #2c218a;
         }
         @media print {
-            body {
-                margin: 0;
-                padding: 0;
+            .print-btn {
+                display: none;
             }
             .report-container {
                 box-shadow: none;
                 border: none;
-            }
-            button {
-                display: none;
+                padding: 0;
             }
         }
     </style>
 </head>
 <body>
     <div class="report-container">
+        <!-- Logo and Title Section -->
         <div class="logo-container">
             <img src="{{ asset('img/logosky 2.png') }}" alt="Gym Logo">
             <h1>Roxas Sky Fitness Gym</h1>
@@ -64,65 +99,51 @@
 
         <!-- Summary Section -->
         <div class="summary">
-            <p><strong>Members Registered:</strong> {{ $memberRegistrations ?? 0 }}</p>
-            <p><strong>Total Revenue:</strong> ${{ number_format($totalRevenue ?? 0, 2) }}</p>
+            <h3>Summary of Report</h3>
+            <table>
+                <tr>
+                    <th>Total Revenue</th>
+                    <td>${{ number_format($totalRevenue ?? 0, 2) }}</td>
+                </tr>
+                <tr>
+                    <th>Total Registered Members</th>
+                    <td>{{ $memberRegistrations ?? 0 }}</td>
+                </tr>
+            </table>
         </div>
 
-        <!-- Age Trend Analysis -->
-        @if(isset($ageTrend))
-            <h3 class="text-xl font-semibold mb-2">Age Trend Analysis</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                @foreach($ageTrend as $age => $count)
-                    <div class="bg-orange-600 text-white p-6 rounded-lg shadow-lg">
-                        <h4 class="text-lg font-semibold">{{ $age }} years old</h4>
-                        <p class="text-2xl">{{ $count }} members</p>
-                    </div>
-                @endforeach
-            </div>
-        @endif
+        <!-- Member Registration Details Section -->
+        <div class="member-registration-details">
+            <h3>Member Registration Details</h3>
+            @if(isset($promoTrends))
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Total Members</th>
+                            <th>Student Members</th>
+                            <th>Regular Members</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ $promoTrends->total_members }}</td>
+                            <td>{{ $promoTrends->student_members }}</td>
+                            <td>{{ $promoTrends->regular_members }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            @else
+                <p>No member registration data available for {{ Carbon\Carbon::parse($selectedMonth)->format('F Y') }}.</p>
+            @endif
+        </div>
 
-        <!-- Membership Types -->
-        @if(isset($studentMembers) && isset($regularMembers))
-            <h3 class="text-xl font-semibold mb-2">Membership Types</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div class="bg-purple-600 text-white p-6 rounded-lg shadow-lg">
-                    <h4 class="text-lg font-semibold">Student Members</h4>
-                    <p class="text-2xl">{{ $studentMembers ?? 0 }} ({{ number_format($studentMembersPercentage ?? 0, 2) }}%)</p>
-                </div>
-                <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
-                    <h4 class="text-lg font-semibold">Regular Members</h4>
-                    <p class="text-2xl">{{ $regularMembers ?? 0 }} ({{ number_format($regularMembersPercentage ?? 0, 2) }}%)</p>
-                </div>
-            </div>
-        @endif
+        <!-- Footer -->
+        <div class="footer">
+            <p>Generated on {{ now()->format('M d, Y') }}</p>
+        </div>
 
-        <!-- Revenue by Month -->
-        @if(isset($revenueByMonth))
-            <h3 class="text-xl font-semibold mb-2">Revenue by Month</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                @foreach($revenueByMonth as $month => $revenue)
-                    <div class="bg-teal-600 text-white p-6 rounded-lg shadow-lg">
-                        <h4 class="text-lg font-semibold">{{ $month }}</h4>
-                        <p class="text-2xl">${{ number_format($revenue, 2) }}</p>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        <!-- Top 5 Most Popular Subscriptions -->
-        @if(isset($topSubscriptions))
-            <h3 class="text-xl font-semibold mb-2">Top 5 Most Popular Subscriptions</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                @foreach($topSubscriptions as $subscription)
-                    <div class="bg-pink-600 text-white p-6 rounded-lg shadow-lg">
-                        <h4 class="text-lg font-semibold">{{ $subscription->subscription_name }}</h4>
-                        <p class="text-2xl">{{ $subscription->members_count }} members</p>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-
-        <button class="no-print" onclick="window.print()">Print Report</button>
+        <!-- Print Button -->
+        <button class="print-btn" onclick="window.print()">Print Report</button>
     </div>
 </body>
 </html>
