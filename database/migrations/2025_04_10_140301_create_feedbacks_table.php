@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateFeedbacksTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,8 +13,10 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('role')->default('gym_staff'); // Add this line
+        Schema::create('feedbacks', function (Blueprint $table) {
+            $table->id();
+            $table->text('message'); // Store the feedback message
+            $table->timestamps(); // Timestamps for when feedback was created
         });
     }
 
@@ -25,8 +27,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('role');
-        });
+        Schema::dropIfExists('feedbacks');
     }
-};
+}

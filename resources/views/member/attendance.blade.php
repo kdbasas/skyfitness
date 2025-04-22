@@ -15,6 +15,13 @@
         <input type="text" id="qr-code-input" class="form-input mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" placeholder="Click here and scan your QR Code to the Scanner">
         <button id="scan-qr-btn" class="w-full px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#16104d] mt-4 transition duration-200 ease-in-out">Submit</button>
     </div>
+        <!-- Feedback Section -->
+    <div id="feedback-section" class="p-6 mt-6 bg-white shadow-md rounded-lg w-full max-w-md">
+        <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Your Feedback</h2>
+        <textarea id="feedback-message" class="form-textarea mt-1 block w-full rounded-lg bg-gray-100 border-gray-300 focus:border-[#1A1363] focus:ring-[#1A1363]" placeholder="Write your feedback here..." rows="4"></textarea>
+        <button id="submit-feedback-btn" class="w-full px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 mt-4 transition duration-200 ease-in-out">Submit Feedback</button>
+        <p id="feedback-response-message" class="text-lg text-gray-700 mt-2"></p>
+    </div>
 
     <!-- Attendance Status Section -->
     <div id="attendance-status" style="display: none;" class="p-6 mt-6 bg-white shadow-md rounded-lg w-full max-w-md">
@@ -33,6 +40,10 @@
         <button id="done-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg shadow-md hover:bg-blue-600 transition duration-200 ease-in-out">Done</button>
     </div>
 </div>
+<!-- Back Button -->
+<div class="p-6 mt-6 w-full max-w-md flex justify-center">
+    <a href="{{ route('login') }}" class="px-4 py-2 bg-gray-400 text-white rounded-lg shadow-md hover:bg-gray-500 transition duration-200 ease-in-out">Back to Login</a>
+</div>
 
 <!-- Include jQuery if not already included -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -47,7 +58,12 @@
     var checkOutBtn = document.getElementById('check-out-btn');
     var doneBtn = document.getElementById('done-btn');
     var doneSection = document.getElementById('done-section');
-    
+
+    // Feedback elements
+    var feedbackMessageInput = document.getElementById('feedback-message');
+    var submitFeedbackBtn = document.getElementById('submit-feedback-btn');
+    var feedbackResponseMessage = document.getElementById('feedback-response-message');
+
     var memberId; // This will hold the member ID parsed from QR code
 
     scanQrBtn.addEventListener('click', function(event) {
@@ -149,6 +165,38 @@
             }
         });
     });
+
+    // Handle Done button click - Redirect to the login page
+    doneBtn.addEventListener('click', function() {
+        window.location.href = '{{ route("login") }}';
+    });
+    submitFeedbackBtn.addEventListener('click', function(event) {
+    event.preventDefault();
+
+    var feedbackMessage = feedbackMessageInput.value;
+
+    if (feedbackMessage === '') {
+        alert('Please write your feedback before submitting.');
+        return;
+    }
+
+    // Send AJAX request to submit feedback
+    $.ajax({
+        type: 'POST',
+        url: '{{ route("feedback.submit") }}',
+        data: {
+            message: feedbackMessage,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            feedbackResponseMessage.textContent = 'Thank you for your feedback!';
+            feedbackMessageInput.value = ''; // Clear feedback input after submission
+        },
+        error: function(xhr) {
+            feedbackResponseMessage.textContent = 'An error occurred: ' + xhr.responseJSON.message;
+        }
+    });
+});
 
     // Handle Done button click - Redirect to the login page
     doneBtn.addEventListener('click', function() {

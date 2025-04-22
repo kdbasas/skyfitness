@@ -26,45 +26,45 @@
         text-align: left; /* Align text to the left */
         margin: 0 auto; /* Center the text horizontally */
         width: 70%; /* Make the text width match the line width */
-        transform: translateX(4%); /* Add a translation to the left to center the text */
+        transform: translateX(-10%); /* Add a translation to the left to center the text */
     }
     .gym {
         font-size: 12px;
         text-align: left; /* Align text to the left */
         margin: 0 auto; /* Center the text horizontally */
         width: 70%; /* Make the text width match the line width */
-        transform: translateX(5%); /* Add a translation to the left to center the text */
+        transform: translateX(-20%); /* Add a translation to the left to center the text */
     }
     .receiptnumber {
         text-align: left; /* Align text to the left */
         margin: 0 auto; /* Center the text horizontally */
         width: 70%; /* Make the text width match the line width */
-        transform: translateX(15%); /* Add a translation to the left to center the text */
+        transform: translateX(-10%); /* Add a translation to the left to center the text */
     }
     .asterisk {
         text-align: left; /* Align text to the left */
         margin: 0 auto; /* Center the text horizontally */
         width: 70%; /* Make the text width match the line width */
-        transform: translateX(-21%); /* Add a translation to the left to center the text */
+        transform: translateX(-30%); /* Add a translation to the left to center the text */
     }
         .line {
             border-top: 1px solid #000; /* Solid line */
             margin: 10px 0; /* Margin for spacing */
             width: 70%; /* Make the line full width */
-            transform: translateX(20%);
+            transform: translateX(1%);
         }
         .content {
             display: flex; /* Use flexbox for layout */
             justify-content: space-between; /* Space between label and value */
             margin: 5px 0; /* Margin for spacing */
-            width: 80%; /* Make content full width */
+            width: 60%; /* Make content full width */
         }
         .content span {
-            width: 40%; /* Each label takes half the width */
+            width: 20%; /* Each label takes half the width */
             text-align: center; /* Center text in each span */
         }
         .span {
-            width: 40%; /* Each label takes half the width */
+            width: 10%; /* Each label takes half the width */
             text-align: center; /* Center text in each span */
         }
         .content-value {

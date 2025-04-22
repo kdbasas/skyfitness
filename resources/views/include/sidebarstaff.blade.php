@@ -31,7 +31,7 @@
         </li>
         <!-- Payment -->
         <li>
-            <a href="{{ route('gym_staff.payment.form') }}" class="sidebar-button {{ request()->routeIs('admin.payment.form') ? 'active' : '' }}">
+            <a href="{{ route('gym_staff.payment.form') }}" class="sidebar-button {{ request()->routeIs('gym_staff.payment.form') ? 'active' : '' }}">
                 <i class="fas fa-money-bill-wave text-white text-lg mr-3"></i>
                 <span class="text-base font-medium">Payment</span>
             </a>

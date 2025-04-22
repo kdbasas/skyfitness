@@ -19,10 +19,10 @@
                     <label for="date">Select Date:</label>
                     <input type="date" id="date" name="date" value="{{ $selectedDate }}" onchange="this.form.submit()">
                 </form>
-                <a href="{{ route('attendance.pdf', ['date' => $selectedDate]) }}"
-                   class="ml-4 bg-[#1A1363] text-white px-4 py-2 rounded-lg hover:bg-[#333] transition duration-300 ease-in-out">
-                    Print Report
-                </a>
+                <a href="{{ route('gym_staff.attendance.pdf', ['date' => $selectedDate]) }}"
+                    class="ml-4 bg-[#1A1363] text-white px-4 py-2 rounded-lg hover:bg-[#333] transition duration-300 ease-in-out">
+                     Print Report
+                 </a>                 
             </div>
             <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>

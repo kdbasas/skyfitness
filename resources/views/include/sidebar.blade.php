@@ -84,11 +84,22 @@
 
         <!-- Attendance -->
         <li>
- <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
-                <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
-                <span class="text-base font-medium">Attendance</span>
+    <a href="{{ route('admin.attendance') }}" class="sidebar-button {{ request()->routeIs('admin.attendance') ? 'active' : '' }}">
+                    <i class="fas fa-calendar-check text-white text-lg mr-3"></i>
+                    <span class="text-base font-medium">Attendance</span>
+                </a>
+                </li>
+                    <!-- Feedback Sidebar Link -->
+        <li>
+            <a href="{{ route('admin.feedback') }}" class="sidebar-button {{ request()->routeIs('admin.feedback') ? 'active' : '' }}">
+                <i class="fas fa-comment-dots text-white text-lg mr-3"></i>
+                <span class="text-base font-medium">Feedback</span>
+                @if(isset($unreadFeedbackCount) && $unreadFeedbackCount > 0)
+                    <span class="ml-2 text-xs bg-red-500 text-white rounded-full px-2 py-1">{{ $unreadFeedbackCount }}</span>
+                @endif
             </a>
         </li>
+    
         <li>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

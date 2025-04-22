@@ -17,7 +17,7 @@ class Member extends Model
 
     // Allow mass assignment for these attributes
     protected $fillable = [
-        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'subscription_id', 'amount','qr_code','renewed_date','promo', 'id_attachment',
+        'first_name', 'middle_name', 'last_name', 'suffix_name', 'date_joined', 'date_expired', 'email', 'contact_number', 'age' ,'subscription_id', 'amount','qr_code','renewed_date','promo', 'id_attachment','gender_id',
     ];
 
     // Optionally, specify the data types for dates
@@ -26,8 +26,15 @@ class Member extends Model
         'date_expired',
         'renewed_date',
     ];
-
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
     // Define relationships if needed
+    public function gender()
+    {
+        return $this->belongsTo(Gender::class, 'gender_id'); // Assum   ing 'gender_id' is the foreign key in the members table
+    }
     public function subscription()
     {
         return $this->belongsTo(Subscription::class, 'subscription_id');

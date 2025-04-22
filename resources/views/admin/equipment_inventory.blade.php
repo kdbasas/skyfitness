@@ -33,7 +33,6 @@
         <!-- Equipment Inventory Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
             <h1 class="text-4xl font-bold mb-4 text-yellow-500">Equipment Inventory</h1>
-
             <!-- Add Equipment Form -->
             <form action="{{ route('admin.equipment.add') }}" method="POST" enctype="multipart/form-data">
                 @csrf
@@ -75,13 +74,25 @@
         <!-- Equipment List Section -->
         <div class="bg-white p-6 rounded-lg shadow-lg">
             <h2 class="text-2xl font-bold mb-4 text-[#1A1363]">Equipment List</h2>
-            <a href="{{ route('admin.equipment.report.download') }}" 
-       class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#0f0c5c] justify-center space-x-1">
-        <!-- Print Icon -->
-        <i class="fas fa-print text-xs"></i>
-        <span class="text-sm">Print</span>
-    </a>      
-</div>       
+            <div class="flex justify-between mb-4">
+                <!-- Search and Sort Form -->
+                <form method="GET" action ="{{ route('admin.equipment_inventory') }}" class="flex items-center space-x-4">
+                    <input type="text" name="search" placeholder="Search Equipment..." class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition" value="{{ request('search') }}">
+                    <select name="sort" class="border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="" disabled selected>Sort by Status</option>
+                        <option value="active" {{ request('sort') == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ request('sort') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        <option value="damaged" {{ request('sort') == 'damaged' ? 'selected' : '' }}>Damaged</option>
+                        <option value="maintenance" {{ request('sort') == 'maintenance' ? 'selected' : '' }}>Maintenance</option>
+                    </select>
+                    <button type="submit" class="bg-blue-600 text-white font-semibold rounded-lg px-4 py-2 transition hover:bg-blue-700">Search</button>
+                    <a href="{{ route('admin.equipment_inventory') }}" class="bg-gray-300 text-black font-semibold rounded-lg px-4 py-2 transition hover:bg-gray-400">Clear Sort</a>
+                </form>
+                <a href="{{ route('admin.equipment.report.download') }}" class="px-4 py-2 bg-[#1A1363] text-white rounded-lg shadow-md hover:bg-[#0f0c5c] flex items-center">
+                    <i class="fas fa-print text-xs mr-1"></i>
+                    <span class="text-sm">Print</span>
+                </a>
+            </div>
             <table class="w-full bg-white border border-gray-300 rounded-lg shadow-md">
                 <thead>
                     <tr class="bg-[#1A1363] text-white">

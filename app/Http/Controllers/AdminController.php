@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\GymStaff;
-use App\Models\Notification;
+use App\Models\Feedback;
 use App\Models\Gender; 
 use App\Models\User;
 use App\Models\Subscription;
@@ -43,16 +43,32 @@ class AdminController extends Controller
             Session::forget('just_logged_in'); // Reset login notification
         }
 
-        // Update expired members' status
-        $expiredMembers = Member::whereDate('date_expired', '<=', Carbon::now())->get();
-        foreach ($expiredMembers as $member) {
-            $member->status = 'inactive';
-            $member->save();
+       // Fetch all members
+    $members = Member::all();
+
+    // Categorize members
+    $activeMembers = collect(); // Initialize as a collection
+    $inactiveMembers = collect(); // Initialize as a collection
+    $expiredMembers = collect(); // Initialize as a collection
+
+    foreach ($members as $member) {
+        if ($member->date_expired && \Carbon\Carbon::parse($member->date_expired)->isFuture()) {
+            // Membership is still active
+            $activeMembers->push($member);
+        } elseif ($member->date_expired && \Carbon\Carbon::parse($member->date_expired)->isToday()) {
+            // Membership expired today
+            $expiredMembers->push($member);
+        } elseif ($member->date_expired && \Carbon\Carbon::parse($member->date_expired)->isPast()) {
+            // Membership expired in the past
+            if (Carbon::now()->diffInDays($member->date_expired) > 30) {
+                // More than 60 days since expiration
+                $inactiveMembers->push($member);
+            } else {
+                // Less than or equal to 60 days since expiration
+                $expiredMembers->push($member);
+            }
         }
-
-        // Fetch active members
-        $activeMembers = Member::where('status', 'active')->get();
-
+    }
         // Fetch total equipment
         $totalEquipment = Equipment::count();
 
@@ -108,51 +124,28 @@ class AdminController extends Controller
                                          ->take(5)
                                          ->get();
 
-        // Fetch monthly registrations for growth graph
-        $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-
-        // Prepare data for the growth graph
-        $months = [];
-        $registrationCounts = [];
-        foreach ($monthlyRegistrations as $registration ) {
-            $months[] = $registration->month;
-            $registrationCounts[] = $registration->count;
-        }
-
-        $ageTrend = [];
-        $members = Member::whereYear('date_joined', Carbon::parse($currentMonth)->year)
-                          ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
-                          ->get();
-        foreach ($members as $member) {
-            $age = Carbon::parse($member->birthdate)->age;
-            if (isset($ageTrend[$age])) {
-                $ageTrend[$age]++;
-            } else {
-                $ageTrend[$age] = 1;
-            }
-        }
+        $currentYear = Carbon::now()->year;
+        $currentMonth = Carbon::now()->month;
+    
+        // Fetch the total number of members who joined on or before the current month
+        $totalMembers = DB::table('members')
+            ->whereYear('date_joined', '<=', $currentYear)
+            ->whereMonth('date_joined', '<=', $currentMonth)
+            ->count();
 
         return view('admin.dashboard', compact(
-            'notifications',
-            'activeMembers',
+            'activeMembers',    
+            'inactiveMembers',
             'expiredMembers',
             'expiringMembers',
             'totalEquipment',
             'equipmentInUse',
             'equipmentAvailable',
             'totalRevenue',
-            'studentMembers',
-            'regularMembers',
-            'studentMembersPercentage',
-            'regularMembersPercentage',
             'revenueByMonth',
-            'topSubscriptions',
-            'ageTrend',
-            'months', // Pass months to the view
-            'registrationCounts' // Pass registration counts to the view
+            'totalMembers',
+            'currentYear',
+            'currentMonth'
         ));
     }
 
@@ -174,63 +167,46 @@ class AdminController extends Controller
 public function reportAnalytics(Request $request)
 {
     $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
-    $totalRevenue = 0; 
 
-    // Fetch member registration data for the selected month
-    $memberRegistrations = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-        ->count();
+    // Get start and end of the selected month
+    $startOfMonth = Carbon::parse($selectedMonth)->startOfMonth();
+    $endOfMonth = Carbon::parse($selectedMonth)->endOfMonth();
 
-    // Fetch members collection for age trend analysis
-    $members = Member::whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
+    // Fetch daily registrations for the growth chart
+    $dailyRegistrations = Member::selectRaw('DATE(date_joined) as day, COUNT(*) as count')
+        ->whereBetween('date_joined', [$startOfMonth, $endOfMonth])
+        ->groupBy('day')
+        ->orderBy('day')
         ->get();
 
+    $days = $dailyRegistrations->pluck('day')->map(function ($date) {
+        return Carbon::parse($date)->format('d'); // Format as "01", "02", etc.
+    })->toArray();
+    $dailyCounts = $dailyRegistrations->pluck('count')->toArray();
 
-         // Fetch total revenue for the selected month
-    if ($request->has('month')) {
-        $totalRevenue = Payment::join('members', 'payments.member_id', '=', 'members.member_id')
-            ->whereYear('members.date_joined', Carbon::parse($selectedMonth)->year)
-            ->whereMonth('members.date_joined', Carbon::parse($selectedMonth)->month)
-            ->sum('payments.amount');
-    }
-    // Fetch monthly registrations for graph growth
-    $monthlyRegistrations = Member::select(DB::raw('DATE_FORMAT(date_joined, "%Y-%m") as month'), DB::raw('count(*) as count'))
-        ->groupBy('month')
-        ->orderBy('month')
+    // Fetch member count and revenue
+    $memberRegistrations = Member::whereBetween('date_joined', [$startOfMonth, $endOfMonth])->count();
+    $totalRevenue = Payment::whereBetween('date_paid', [$startOfMonth, $endOfMonth])->sum('amount');
+
+    // Fetch promo trends
+    $promoTrends = Member::selectRaw('promo, COUNT(*) as count')
+        ->whereBetween('date_joined', [$startOfMonth, $endOfMonth])
+        ->groupBy('promo')
         ->get();
 
-    // Prepare data for graph growth
-    $months = [];
-    $registrationCounts = [];
-    foreach ($monthlyRegistrations as $registration) {
-        $months[] = $registration->month;
-        $registrationCounts[] = $registration->count;
-    }
-    $promoTrends = Member::select(DB::raw('promo'), DB::raw('count(*) as count'))
-    ->whereYear('date_joined', Carbon::parse($selectedMonth)->year)
-    ->whereMonth('date_joined', Carbon::parse($selectedMonth)->month)
-    ->groupBy('promo')
-    ->get();
-    // Prepare data for promo trends
-    $promoLabels = [];
-    $promoCounts = [];
-    foreach ($promoTrends as $trend) {
-        $promoLabels[] = $trend->promo;
-        $promoCounts[] = $trend->count;
-    }
-        return view('admin.report', compact(
+    $promoLabels = $promoTrends->pluck('promo')->toArray();
+    $promoCounts = $promoTrends->pluck('count')->toArray();
+
+    return view('admin.report', compact(
         'selectedMonth',
         'memberRegistrations',
         'totalRevenue',
-        'months',
-        'registrationCounts',
+        'days',
+        'dailyCounts',
         'promoLabels',
-        'promoCounts',
-        ));
-    }
-
-
+        'promoCounts'
+    ));
+}
     public function printReport(Request $request)
 {
     $selectedMonth = $request->input('month');
@@ -289,7 +265,10 @@ public function reportAnalytics(Request $request)
         if ($admin->role !== 'admin') {
             return redirect()->route('home')->with('error', 'Unauthorized access');
         }
-        return view('admin.profile', compact('admin'));
+            
+        // Get all admins for display
+        $admins = User::where('role', 'admin')->get();
+        return view('admin.profile', compact('admin', 'admins'));
     }
 
     // Update Admin Profile
@@ -341,31 +320,23 @@ public function reportAnalytics(Request $request)
     return redirect()->route('admin.profile')->with('success', 'Profile picture updated successfully.');
 }
 
-    // Show Registration Form
-    public function showRegistrationForm()
-    {
-        return view('admin.registration');
-    }
+public function registerNewAdmin(Request $request)
+{
+    $request->validate([
+        'register_name' => 'required|string|max:255',
+        'register_email' => 'required|string|email|max:255|unique:users,email',
+        'register_password' => 'required|string|min:8|confirmed',
+    ]);
 
-    // Register New Admin
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-        ]);
+    User::create([
+        'name' => $request->register_name,
+        'email' => $request->register_email,
+        'password' => Hash::make($request->register_password),
+        'role' => 'admin' // Set the role to 'admin'
+    ]);
 
-        User::create([
-            'name' => $request->input('name'),
-            'email' => $request->input('email'),
-            'password' => bcrypt($request->input('password')),
-            'role' => 'admin', // Set role to admin
-        ]);
-
-        return redirect()->route('admin.dashboard')->with('success', 'New admin registered successfully.');
-    }
-
+    return redirect()->back()->with('success', 'New admin registered successfully!');
+}
     // Show Subscription Management
     public function showSubscriptions()
     {
@@ -428,92 +399,99 @@ public function reportAnalytics(Request $request)
         return redirect()->route('admin.subscription')->with('error', 'Subscription not found.');
     }
 
-    public function showPaymentForm($memberId = null, Request $request)
+    public function showPaymentForm(Request $request)
 {
     $members = Member::all(); // Fetch all members
     $subscriptions = Subscription::all(); // Fetch all subscriptions
 
     // Get the selected date from the request, default to today
     $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+    
 
-    // Fetch payments based on the selected date
-    $payments = Payment::with('member', 'subscription')
-        ->whereDate('date_paid', $selectedDate) // Filter by the selected date
-        ->orderBy('date_paid', 'asc') // Default sorting by date
-        ->get(); // Execute the query
+    // Start building the query for payments
+    $payments = Payment::with('member', 'subscription');
 
-    // If a member ID is provided, fetch that specific member
-    $member = $memberId ? Member::find($memberId) : null; // Use find() to avoid an exception if not found
-
-    // Check if the member exists
-    if ($memberId && !$member) {
-        return redirect()->back()->with('error', 'Member not found.'); // Redirect with an error message
+    // Implement search functionality
+    if ($request->has('search') && $request->input('search') != '') {
+        $search = $request->input('search');
+        $payments->whereHas('member', function ($query) use ($search) {
+            $query->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%");
+        });
     }
 
-    return view('admin.payment', compact('members', 'subscriptions', 'payments', 'member', 'selectedDate'));
-}
-public function addPayment(Request $request)
-{
-    \Log::info('Payment Data:', $request->all()); // For debugging
+    // Filter by the selected date
+    $payments->whereDate('date_paid', $selectedDate);
 
-    $request->validate([
-        'member_id' => 'required|exists:members,member_id',
-        'subscription_id' => 'required|exists:subscriptions,subscription_id',  // Ensure this points to the correct column
-        'date_paid' => 'required|date',
-        'promo' => 'required|string', // Ensure promo is validated
-    ]);
-    
-    $member = Member::find($request->member_id);
-    $promo = $request->input('promo');
-    
-    // Fetch the subscription to get the validity
-    $subscription = Subscription::find($request->subscription_id);
-    
-    // Calculate the amount based on the subscription validity and promo
-    $amount = 0;
-
-    if ($subscription) {
-        // Calculate the total amount based on the promo and subscription validity
-        if ($promo == 'Student') {
-            $amount = 450 * $subscription->validity; // Assuming validity is in months
-        } elseif ($promo == 'Regular') {
-            $amount = 500 * $subscription->validity; // Assuming validity is in months
+    // Implement sorting functionality
+    if ($request->has('sort')) {
+        $sort = $request->input('sort');
+        if ($sort === 'latest') {
+            $payments->orderBy('date_paid', 'desc');
+        } elseif ($sort === 'oldest') {
+            $payments->orderBy('date_paid', 'asc');
+        } elseif ($sort === 'registration') {
+            $payments->where('status', 'Registration');
+        } elseif ($sort === 'renewal') {
+            $payments->where('status', 'Renewal');
         }
     }
 
-    // Debugging: Log the calculated amount
-    \Log::info('Calculated Amount:', ['amount' => $amount]);
+    // Execute the query to get the payments
+    $payments = $payments->get(); // Now we call get() after applying filters
 
-    // Create the payment record
-    $payment = Payment::create([
-        'member_id' => $request->member_id,
-        'subscription_id' => $request->subscription_id,
-        'amount' => $amount, // Use the calculated amount
-        'date_paid' => $request->date_paid,
-        'promo' => $promo, // Store the promo selected
+    return view('admin.payment', compact('members', 'subscriptions', 'payments', 'selectedDate'));
+}
+public function addPayment(Request $request)
+{
+    \Log::info('Payment Data:', $request->all()); // Debugging
+
+    $request->validate([
+        'member_id' => 'required|exists:members,member_id',
+        'subscription_id' => 'required|exists:subscriptions,subscription_id',
+        'date_paid' => 'required|date',
+        'promo' => 'required|string',
     ]);
 
-    // Update the member's renewal date and subscription details
-    $validityPeriodInMonths = $subscription->validity;
+    $member = Member::find($request->member_id);
+    $subscription = Subscription::find($request->subscription_id);
+    $promo = $request->input('promo');
 
-    // If the member already has an expiration date, add the validity period to it
-    if ($member->date_expired) {
-        $member->date_expired = Carbon::parse($member->date_expired)->addMonths($validityPeriodInMonths)->format('Y-m-d');
-    } else {
-        // If no expiration date exists, set it based on the current date
-        $member->date_expired = Carbon::now()->addMonths($validityPeriodInMonths)->format('Y-m-d');
+    // Calculate amount based on promo
+    $monthlyAmount = ($promo == 'Student') ? 450 : 500; // Monthly amount based on promo
+    $validityPeriodInMonths = $subscription->validity ?? 0; 
+
+    // Prevent division by zero
+    if ($validityPeriodInMonths <= 0) {
+        return back()->with('error', 'Invalid subscription validity period.');
     }
 
-    // Update the member's subscription and promo
-    $member->subscription_id = $request->subscription_id;
-    $member->promo = $promo; // Update the promo field if needed
+    // ✅ Move totalAmount calculation here
+    $totalAmount = $monthlyAmount * $validityPeriodInMonths;
 
-    // Update the total amount for the member
-    $member->amount = ($member->amount ?? 0) + $amount; // Add the new payment amount to the existing amount
-    $member->save(); // Save the updated member record
+    // Create payment records for each month of the new subscription
+    for ($i = 0; $i < $validityPeriodInMonths; $i++) {
+        $paymentDate = Carbon::parse($request->date_paid)->addMonths($i)->format('Y-m-d');
+        Payment::create([
+            'member_id' => $request->member_id,
+            'subscription_id' => $request->subscription_id,
+            'amount' => $monthlyAmount, // Assign the divided amount
+            'date_paid' => $paymentDate,
+            'promo' => $promo,
+            'status' => 'Renewal',
+        ]);
+    }
+
+    // Update member's expiration date based on the renewal date
+    $newExpiration = Carbon::parse($request->date_paid)->addMonths($subscription->validity)->format('Y-m-d');
+    $member->date_expired = $newExpiration;
+    $member->subscription_id = $request->subscription_id;
+    $member->amount = ($member->amount ?? 0) + $totalAmount; // Update total amount
+    $member->save();
 
     return redirect()->route('admin.payment.form')->with('success', 'Payment recorded successfully!');
 }
+
 public function editPayment($id)
 {
     $payment = Payment::findOrFail($id);
@@ -532,14 +510,17 @@ public function updatePayment(Request $request, $id)
         'subscription_id' => 'required|exists:subscriptions,subscription_id',
         'promo' => 'required|string',
         'date_paid' => 'required|date',
-        'amount' => 'required|numeric',
     ]);
+
+    // Calculate the amount based on the promo and subscription
+    $subscription = Subscription::find($validatedData['subscription_id']);
+    $amount = ($validatedData['promo'] == 'Student') ? 450 * $subscription->validity : 500 * $subscription->validity;
 
     // Update payment information
     $payment->subscription_id = $validatedData['subscription_id'];
     $payment->promo = $validatedData['promo'];
     $payment->date_paid = $validatedData['date_paid'];
-    $payment->amount = $validatedData['amount'];
+    $payment->amount = $amount; // Set the calculated amount
 
     // Save the updated payment
     $payment->save();
@@ -550,22 +531,15 @@ public function updatePayment(Request $request, $id)
     $member->promo = $validatedData['promo'];
 
     // Calculate the new expiration date based on the subscription validity
-    $subscription = Subscription::find($validatedData['subscription_id']);
     if ($subscription) {
-        if ($member->date_expired) {
-            // Add the validity period of the new subscription to the existing expiration date
-            $member->date_expired = Carbon::parse($member->date_expired)->addMonths($subscription->validity)->format('Y-m-d');
-        } else {
-            // If no expiration date exists, set it based on the current date
-            $member->date_expired = Carbon::now()->addMonths($subscription->validity)->format('Y-m-d');
-        }
+        // Reset the expiration date based on the new subscription validity
+        $member->date_expired = Carbon::now()->addMonths($subscription->validity)->format('Y-m-d');
     }
 
     // Save the updated member record
     $member->save();
 
-    return redirect()->route('admin.payment.form', ['id' => $payment->payment_id])
-        ->with('success', 'Payment updated successfully');
+    return redirect()->route('admin.payment.form')->with('success', 'Payment updated successfully');
 }
 public function deletePayment($id)
 {
@@ -574,32 +548,59 @@ public function deletePayment($id)
 
     return redirect()->back()->with('success', 'Payment deleted successfully');
 }
-
-// Download Payment History
-public function downloadPaymentHistory(Request $request)
+public function downloadpaymentPDF(Request $request)
 {
-    $selectedMonth = $request->input('month');
-
-    $payments = Payment::whereYear('date_paid', Carbon::parse($selectedMonth)->year)
-        ->whereMonth('date_paid', Carbon::parse($selectedMonth)->month)
+    $date = $request->get('date', now()->format('Y-m-d'));
+    
+    $payments = Payment::with(['member', 'subscription'])
+        ->whereDate('date_paid', $date)
+        ->orderBy('date_paid', 'desc')
         ->get();
 
-    $pdf = PDF::loadView('admin.payment_history_pdf', compact('payments', 'selectedMonth'));
+    $pdf = PDF::loadView('admin.payment-pdf', [
+        'payments' => $payments,
+        'date' => Carbon::parse($date)->format('F d, Y'),
+        'totalAmount' => $payments->sum('amount'),
+        'generatedAt' => now()->format('F d, Y h:i A')
+    ]);
 
-    return $pdf->download('payment_history_' . $selectedMonth . '.pdf');
+    return $pdf->download('payment_report_' . Carbon::parse($date)->format('Y-m-d') . '.pdf');
 }
-
-    // Show Inventory Management
-    public function showInventory($id = null)
-    {
-        if ($id) {
-            $equipments = Equipment::findOrFail($id);
-            return view('admin.equipment_inventory_detail', compact('equipments')); // Modify to your detail view if needed
-        }
-
-        $equipments = Equipment::all();
-        return view('admin.equipment_inventory', compact('equipments'));
+public function showInventory(Request $request, $id = null)
+{
+    if ($id) {
+        $equipment = Equipment::findOrFail($id);
+        return view('admin.equipment_inventory_detail', compact('equipment')); // Modify to your detail view if needed
     }
+
+    // Start building the query for equipment
+    $equipments = Equipment::query();
+
+    // Implement search functionality
+    if ($request->has('search') && $request->input('search') != '') {
+        $search = $request->input('search');
+        $equipments->where('equipment_name', 'like', "%{$search}%");
+    }
+
+    // Implement sorting functionality
+    if ($request->has('sort')) {
+        $sort = $request->input('sort');
+        if ($sort === 'active') {
+            $equipments->where('status', 'active');
+        } elseif ($sort === 'inactive') {
+            $equipments->where('status', 'inactive');
+        } elseif ($sort === 'damaged') {
+            $equipments->where('status', 'damaged');
+        } elseif ($sort === 'maintenance') {
+            $equipments->where('status', 'maintenance');
+        }
+    }
+
+    // Get all equipment
+    $equipments = $equipments->get();
+
+    return view('admin.equipment_inventory', compact('equipments'));
+}
     public function generatePaymentReport(Request $request)
     {
         $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
@@ -745,22 +746,111 @@ public function downloadReportEquipment(Request $request)
     public function showMembers(Request $request)
 {
     $search = $request->input('search');
+    $sort = $request->input('sort', '');
 
     // Query to fetch members with the search functionality
-    $members = Member::with('subscription')
+    $members = Member::with('subscription', 'gender')
         ->when($search, function ($query, $search) {
             $query->where('first_name', 'like', "%{$search}%")
                 ->orWhere('last_name', 'like', "%{$search}%")
-                ->orWhere('contact_number', 'like', "%{$search}%") // Include contact_number search as well
+                ->orWhere('contact_number', 'like', "%{$search}%")
                 ->orWhereHas('subscription', function ($query) use ($search) {
                     $query->where('subscription_name', 'like', "%{$search}%");
                 });
-        })
-        ->paginate(10);
-        $subscriptions = Subscription::all();
+        });
+     // Define sorting options
+    $sortOptions = [
+        'latest' => ['column' => 'date_joined', 'direction' => 'desc'],
+        'oldest' => ['column' => 'date_joined', 'direction' => 'asc'],
+        'student' => ['column' => 'promo', 'value' => 'Student'],
+        'regular' => ['column' => 'promo', 'value' => 'Regular'],
+        'gender_male' => ['column' => 'gender', 'value' => 'Male'],
+        'gender_female' => ['column' => 'gender', 'value' => 'Female'],
+        'active' => ['condition' => 'active'],
+        'inactive' => ['condition' => 'inactive'],
+        'expired' => ['condition' => 'expired'],
+    ];
 
-    // Return the view with the members data
-    return view('admin.member_management', compact('members', 'subscriptions'));
+     // Apply sorting based on the selected option
+     if (array_key_exists($sort, $sortOptions)) {
+        $option = $sortOptions[$sort];
+        if (isset($option['condition'])) {
+            if ($option['condition'] === 'active') {
+                $members->where('date_expired', '>', now());
+            } elseif ($option['condition'] === 'inactive') {
+                $members->where('date_expired', '<', now()->subDays(30));
+            } elseif ($option['condition'] === 'expired') {
+                $members->where('date_expired', '<=', now())->where('date_expired', '>', now()->subDays(30));
+            }
+        } elseif (isset($option['direction'])) {
+            $members->orderBy($option['column'], $option['direction']);
+        } elseif (isset($option['value'])) {
+            if ($option['column'] === 'promo') {
+                // Sort by promo directly
+                $members->where('promo', $option['value']);
+            } elseif ($option['column'] === 'gender') {
+                // Sort by gender
+                $members->whereHas('gender', function ($query) use ($option) {
+                    $query->where('name', $option['value']);
+                });
+            }
+        }
+    }
+    // Default sorting by date_joined if no sort option is selected
+    $members->orderBy('date_joined', 'desc');
+
+    // Paginate the results
+    $members = $members->paginate(6); // Adjust the number of items per page as needed
+
+    // Retrieve all subscriptions for the dropdown
+    $subscriptions = Subscription::all();
+    $genders = Gender::all();
+
+    return view('admin.member_management', compact('members', 'subscriptions', 'genders'));
+}
+public function generateMemberReport(Request $request)
+{
+    $reportType = $request->input('report_type');
+
+    switch ($reportType) {
+        case 'new_members':
+            $currentMonth = Carbon::now()->format('Y-m');
+            $members = Member::whereYear('date_joined', Carbon::parse($currentMonth)->year)
+                             ->whereMonth('date_joined', Carbon::parse($currentMonth)->month)
+                             ->get();
+            $view = 'admin.new_members_report';
+            break;
+
+            case 'renewals':
+                // Eager load the member relationship
+                $members = Payment::with('member')
+                                 ->where('status', 'Renewal')
+                                 ->get();
+                $view = 'admin.renewals_report';
+                break;
+
+        case 'active':
+            $members = Member::where('date_expired', '>', Carbon::now())->get();
+            $view = 'admin.active_members_report';
+            break;
+
+        case 'inactive':
+            $members = Member::where('date_expired', '<', Carbon::now()->subDays(30))->get();
+            $view = 'admin.inactive_members_report';
+            break;
+
+        case 'expired':
+            $members = Member::where('date_expired', '<=', Carbon::now())->where('date_expired', '>', Carbon::now()->subDays(30))->get();
+            $view = 'admin.expired_members_report';
+            break;
+
+        default:
+            return redirect()->back()->with('error', 'Invalid report type selected.');
+    }
+
+    // Load the report PDF view
+    $pdf = PDF::loadView($view, compact('members'));
+    return $pdf->download("{$reportType}_report.pdf");
 }
     // Add New Member
     public function addMember(Request $request)
@@ -774,9 +864,11 @@ public function downloadReportEquipment(Request $request)
         'date_joined' => 'required|date',
         'email' => 'required|email|unique:members,email',
         'contact_number' => 'required|string|max:20',
+        'age' => 'required|integer|min:1',
         'subscription_id' => 'required|exists:subscriptions,subscription_id',
         'promo' => 'required|string',
-        'id_attachment' => 'required|file|mimes:jpg,jpeg,png|max:2048',
+        'id_attachment' => 'file|mimes:jpg,jpeg,png|max:2048',
+        'gender_id' => 'required|exists:genders,gender_id',
     ]);
     try {
         $subscription = Subscription::find($request->subscription_id);
@@ -814,30 +906,25 @@ public function downloadReportEquipment(Request $request)
 
         $member->update(['qr_code' => $qrCodeFilename]);
           // Create the payment record
-        Payment::create([
-            'member_id' => $member->member_id,
-            'subscription_id' => $validated['subscription_id'],
-            'amount' => $amount,
-            'date_paid' => now(),
-            'promo' => $validated['promo'],
-        ]);
+          $monthlyAmount = $amount / $validityPeriodInMonths; // Divide total amount by months
+          for ($i = 0; $i < $validityPeriodInMonths; $i++) {
+            $paymentDate = Carbon::parse($validated['date_joined'])->addMonths($i)->format('Y-m-d');
+            Payment::create([
+                'member_id' => $member->member_id,
+                'subscription_id' => $validated['subscription_id'],
+                'amount' => $monthlyAmount, // Assign the divided amount
+                'date_paid' => $paymentDate,
+                'promo' => $request->promo,
+                'status' => 'Registration',
+            ]);
+        }
 
-        $pdf = Pdf::loadView('admin.receipt_pdf', compact('member'));
-
-        $pdf->setPaper('A4', 'portrait');
-
-        $pdf->save(storage_path('app/public/receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf'));
-
-        $member->update(['receipt_path' => 'receipts/' . $member->first_name . '_' . $member->last_name . '_receipt.pdf']);
-        // Return view with auto-print JS
-        return view('admin.receipt', compact('member', 'pdfFilename'))
-            ->with('success', 'Member registered successfully!');
+        return redirect()->route('admin.member_management')->with('success', 'Member registered successfully!');
     } catch (\Exception $e) {
         \Log::error('Error adding member: ' . $e->getMessage());
         return redirect()->back()->with('error', 'There was an issue adding the member.');
     }
 }
-
 public function calculateAmount(Request $request)
 {
     $request->validate([
@@ -1000,73 +1087,35 @@ public function handleAttendance(Request $request)
 }
 
 public function generatePdf(Request $request)
-{
-    // Retrieve the selected date from the request or use today's date as default
-    $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
-
-    // Fetch attendance records for the selected date
-    $attendanceRecords = Attendance::with('member')
-        ->whereDate('date', $selectedDate)
-        ->orderBy('date', 'asc')
-        ->get();
-
-    // Format attendance data for the PDF view
-    $formattedRecords = $attendanceRecords->map(function ($attendance) {
-        return [
-            'member_name' => $attendance->member->first_name . ' ' . $attendance->member->last_name,
-            'date' => $attendance->date,
-            'check_in_time' => $attendance->check_in_time,
-            'check_out_time' => $attendance->check_out_time,
-        ];
-    });
-
-    // Load the PDF view and pass the attendance data and selected date
-    $pdf = Pdf::loadView('admin.attendance_report', [
-        'attendanceRecords' => $formattedRecords,
-        'selectedDate' => $selectedDate,
-    ]);
-
-    // Return the PDF for download
-    return $pdf->download('attendance_report-' . $selectedDate . '.pdf');
-}
-public function renew(Request $request, $id)
-{
-    // Find the member by ID
-    $member = Member::findOrFail($id);
-
-    // Validate the request
-    $request->validate([
-        'subscription_id' => 'required|exists:subscriptions,subscription_id',
-        'promo' => 'required|string', // Ensure promo is validated
-    ]);
-
-    // Fetch the new subscription to get the validity
-    $subscription = Subscription::find($request->input('subscription_id'));
-    
-    if ($subscription) {
-        // Log the current expiration date
-        \Log::info('Current Expiration Date:', ['date_expired' => $member->date_expired]);
-
-        // If the member already has an expiration date, add the validity period to it
-        if ($member->date_expired) {
-            // Add the validity period of the new subscription to the existing expiration date
-            $member->date_expired = Carbon::parse($member->date_expired)->addMonths($subscription->validity)->format('Y-m-d');
-        } else {
-            // If no expiration date exists, set it based on the current date
-            $member->date_expired = Carbon::now()->addMonths($subscription->validity)->format('Y-m-d');
-        }
-
-        // Log the new expiration date
-        \Log::info('New Expiration Date:', ['new_date_expired' => $member->date_expired]);
-    }
-
-    // Update the member's subscription
-    $member->subscription_id = $request->input('subscription_id');
-    $member->promo = $request->input('promo'); // Update the promo field if needed
-    $member->save(); // Save the updated member record
-
-    return redirect()->back()->with('success', 'Member renewed successfully.');
-}
+ {
+     // Retrieve the selected date from the request or use today's date as default
+     $selectedDate = $request->input('date', Carbon::today()->format('Y-m-d'));
+ 
+     // Fetch attendance records for the selected date
+     $attendanceRecords = Attendance::with('member')
+         ->whereDate('date', $selectedDate)
+         ->orderBy('date', 'asc')
+         ->get();
+ 
+     // Format attendance data for the PDF view
+     $formattedRecords = $attendanceRecords->map(function ($attendance) {
+         return [
+             'member_name' => $attendance->member->first_name . ' ' . $attendance->member->last_name,
+             'date' => $attendance->date,
+             'check_in_time' => $attendance->check_in_time,
+             'check_out_time' => $attendance->check_out_time,
+         ];
+     });
+ 
+     // Load the PDF view and pass the attendance data and selected date
+     $pdf = Pdf::loadView('admin.attendance_report', [
+         'attendanceRecords' => $formattedRecords,
+         'selectedDate' => $selectedDate,
+     ]);
+ 
+     // Return the PDF for download
+     return $pdf->download('attendance_report-' . $selectedDate . '.pdf');
+ }
 
 public function showValidity($id)
 {
@@ -1228,5 +1277,46 @@ public function deleteStaff($id)
         Log::error('Failed to delete staff member ' . $id . ': ' . $e->getMessage());
         return back()->withErrors('Failed to delete staff. Please try again.');
     }
+}
+    public function showFeedbacks(Request $request)
+    {
+         // Get search and sort query parameters
+        $search = $request->input('search'); // Feedback ID search
+        $sort = $request->input('sort', 'desc'); // Default to newest first
+
+        // Query builder
+        $query = Feedback::query();
+
+        // If search input is provided
+        if ($search) {
+            $query->where('id', 'like', "%{$search}%");
+        }
+
+        // Apply sorting by created_at
+        $query->orderBy('created_at', $sort);
+
+        // Paginate results
+        $feedbacks = $query->paginate(10)->appends(['search' => $search, 'sort' => $sort]);
+
+        // Mark feedbacks as read when the feedback page is viewed
+        Feedback::whereNull('read_at')->update(['read_at' => now()]);
+
+        // Fetch unread feedback count
+        $unreadFeedbackCount = Feedback::whereNull('read_at')->count();  // Assuming 'read_at' column is for unread feedbacks
+
+        // Return the view with paginated feedbacks and unread count
+        return view('admin.feedback', compact('feedbacks', 'unreadFeedbackCount', 'search', 'sort')); // Pass the unread count to the view
+    }
+
+public function destroy($id)
+{
+    // Find the feedback by its default 'id'
+    $feedback = Feedback::findOrFail($id);
+
+    // Delete the feedback
+    $feedback->delete();
+
+    // Redirect back with a success message
+    return redirect()->route('admin.feedback')->with('success', 'Feedback deleted successfully.');
 }
 }

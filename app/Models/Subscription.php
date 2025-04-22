@@ -21,6 +21,10 @@ class Subscription extends Model
         'created_at',
         'updated_at',
     ];
+    public function payments()
+{
+    return $this->hasMany(Payment::class, 'subscription_id');
+}
     public function members()
     {
         return $this->hasMany(Member::class, 'subscription_id', 'subscription_id');
